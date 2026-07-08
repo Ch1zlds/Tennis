@@ -19,11 +19,9 @@
   --ink-2:#0d0d0d;
   --ink-3:#1a1a1a;
   --court:#c81e0f;
-  --court-light:#ff4326;
   --chalk:#ffffff;
   --chalk-dim:#8f8f8f;
   --lime:#ff2d12;
-  --lime-dim:#a81e0c;
   --clay:#b8291a;
   --line:rgba(255,255,255,0.13);
   --bg:var(--ink);
@@ -37,14 +35,6 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
-body.light{
-  --bg:#ffffff;
-  --bg-card:#f4f4f4;
-  --bg-card-2:#e9e9e9;
-  --text:#0a0a0a;
-  --text-dim:#6b6b6b;
-  --line:rgba(0,0,0,0.13);
-}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
@@ -53,7 +43,6 @@ body{
   font-family:'IBM Plex Sans', -apple-system, sans-serif;
   min-height:100vh;
   overscroll-behavior-y:none;
-  transition:background .2s ease,color .2s ease;
 }
 h1,h2,h3,.display{
   font-family:'Oswald', sans-serif;
@@ -62,7 +51,7 @@ h1,h2,h3,.display{
   margin:0;
 }
 .mono{font-family:'IBM Plex Mono', monospace;}
-#app{max-width:520px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(78px + var(--safe-bottom));}
+#app{max-width:520px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(78px + var(--safe-bottom)); overflow-x:hidden;}
 
 /* header */
 .topbar{
@@ -80,8 +69,7 @@ h1,h2,h3,.display{
   font-family:'Oswald'; font-weight:700; color:#000; font-size:18px;
   flex-shrink:0;
 }
-.brand-title{font-size:20px; font-weight:700; letter-spacing:0.03em; font-family:'Oswald'; text-transform:uppercase;}
-.brand-sub{font-size:10px; color:var(--text-dim); letter-spacing:0.14em; margin-top:2px; text-transform:uppercase;}
+.brand-sub{font-size:12px; color:var(--text-dim); letter-spacing:0.14em; text-transform:uppercase; font-weight:600;}
 .icon-btn{
   width:38px;height:38px;border-radius:8px;border:1px solid var(--line);
   background:var(--bg-card); color:var(--text); display:flex;align-items:center;justify-content:center;
@@ -90,6 +78,10 @@ h1,h2,h3,.display{
 
 /* content */
 .content{padding:16px 16px 20px;}
+@keyframes slideInFromRight{from{transform:translateX(28px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+@keyframes slideInFromLeft{from{transform:translateX(-28px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+.content.anim-forward{animation:slideInFromRight .22s ease;}
+.content.anim-backward{animation:slideInFromLeft .22s ease;}
 .card{
   background:var(--bg-card);
   border:1px solid var(--line);
@@ -102,7 +94,6 @@ h1,h2,h3,.display{
 
 /* quote */
 .quote-card{background:#000; border:1px solid var(--line); position:relative; overflow:hidden; padding:18px 16px;}
-body.light .quote-card{background:#0a0a0a;}
 .quote-card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);}
 .quote-text{font-family:'Oswald'; font-size:17px; color:#fff; text-transform:uppercase; letter-spacing:0.01em; line-height:1.35; padding-left:10px; font-weight:600;}
 .quote-attr{font-size:10px; color:#8f8f8f; letter-spacing:0.14em; margin-top:10px; padding-left:10px; font-weight:600;}
@@ -249,7 +240,6 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 .sparkline{display:block; margin-top:8px;}
 
-.section-gap{height:6px;}
 .switch{position:relative; width:46px; height:26px; flex-shrink:0;}
 .switch input{opacity:0; width:0; height:0;}
 .slider{position:absolute; inset:0; background:var(--bg-card-2); border:1px solid var(--line); border-radius:999px; cursor:pointer; transition:.2s;}
@@ -259,20 +249,11 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 .empty-state{text-align:center; padding:30px 10px; color:var(--text-dim); font-size:13px;}
 .file-hidden{display:none;}
-hr.rule{border:none; border-top:1px solid var(--line); margin:14px 0;}
-.badge-row{display:flex; gap:6px; flex-wrap:wrap;}
 .tag{font-size:10px; padding:3px 8px; border-radius:5px; background:var(--bg-card-2); color:var(--text-dim); border:1px solid var(--line); text-transform:uppercase; font-weight:600;}
 .heat-grid{display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,1fr); gap:3px; overflow-x:auto; padding-bottom:4px;}
 .heat-cell{width:10px; height:10px; border-radius:2px; background:var(--bg-card-2);}
 .heat-cell.active{background:var(--accent);}
-.goal-bar-track{background:var(--bg-card-2); border-radius:999px; height:8px; overflow:hidden;}
-.goal-bar-fill{height:100%; background:var(--accent); border-radius:999px;}
 .editor-row-btn{width:32px; height:32px; font-size:12px; flex-shrink:0;}
-.photo-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
-.photo-thumb{width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--line); display:block;}
-.photo-modal{position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;}
-.photo-modal img{max-width:100%; max-height:70vh; border-radius:8px;}
-.photo-modal-controls{display:flex; gap:10px; margin-top:16px;}
 ::-webkit-scrollbar{display:none;}
 </style>
 </head>
@@ -281,10 +262,7 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:14px 0;}
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">!</div>
-      <div>
-        <div class="brand-title">Stay Hard.</div>
-        <div class="brand-sub" id="headerDate"></div>
-      </div>
+      <div class="brand-sub" id="headerDate"></div>
     </div>
     <button class="icon-btn" onclick="openSearch()" aria-label="Search exercises">🔍</button>
   </div>
@@ -315,7 +293,6 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:14px 0;}
 
 <div id="toast"></div>
 <input type="file" id="importFile" class="file-hidden" accept="application/json">
-<input type="file" id="photoInput" class="file-hidden" accept="image/*" capture="environment">
 
 <script>
 /* ---------------------------------------------------------------
@@ -325,6 +302,7 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:14px 0;}
 --------------------------------------------------------------- */
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
+const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -372,7 +350,6 @@ const DEFAULT_EXERCISES = {
   renegade_row:{name:'Dumbbell Renegade Row'}, farmers_carry:{name:"Dumbbell Farmer's Carry"},
   arnold_press:{name:'Dumbbell Arnold Press'}, wrist_curl:{name:'Dumbbell Wrist Curl (Elbow Guard)'},
 };
-const MEASUREMENT_TYPES = ['Chest','Waist','Arms','Thighs','Hips'];
 
 function allExercises(){
   const out = [];
@@ -402,12 +379,9 @@ function defaultData(){
   return {
     workouts: [],
     bodyweight: [],
-    measurements: [],
-    photos: [],
-    goals: [],
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { darkMode:true, hapticsEnabled:true, soundEnabled:true, autoOpenNextWorkout:false, lastExportAt:null },
+    settings: { autoOpenNextWorkout:false, lastExportAt:null },
     meta: { createdAt: new Date().toISOString() }
   };
 }
@@ -423,8 +397,6 @@ let state = {
   editorOpen: false,
   expandedIds: new Set(),
   quickAddExId: null,
-  measSelectedType: null,
-  viewingPhotoId: null,
   backupReminderDismissed: false,
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
@@ -462,9 +434,6 @@ async function loadData(){
         ...d, ...parsed,
         program: parsed.program || d.program,
         exercises: parsed.exercises || d.exercises,
-        goals: parsed.goals || [],
-        measurements: parsed.measurements || [],
-        photos: parsed.photos || [],
         settings: {...d.settings, ...(parsed.settings||{})}
       };
     } else {
@@ -513,29 +482,6 @@ function _runToastUndo(){
   const t = document.getElementById('toast');
   t.classList.remove('show');
   _toastUndoFn = null;
-}
-function vibrate(pattern){
-  try{ if(state.data.settings.hapticsEnabled!==false && navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
-}
-let _audioCtx = null;
-function playBeep(freq=880, dur=180){
-  if(state.data.settings.soundEnabled===false) return;
-  try{
-    _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const osc = _audioCtx.createOscillator();
-    const gain = _audioCtx.createGain();
-    osc.frequency.value = freq;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.16, _audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur/1000);
-    osc.connect(gain); gain.connect(_audioCtx.destination);
-    osc.start();
-    osc.stop(_audioCtx.currentTime + dur/1000);
-  }catch(e){}
-}
-function playPrFanfare(){
-  playBeep(880,150);
-  setTimeout(()=>playBeep(1175,220), 160);
 }
 
 /* ---------------- computed stats ---------------- */
@@ -636,30 +582,36 @@ function nextWorkoutDay(){
 }
 
 /* ---------------- rendering shell ---------------- */
-function applyTheme(){
-  document.body.classList.toggle('light', !state.data.settings.darkMode);
-}
 function switchTab(tab){
+  const fromIdx = TAB_ORDER.indexOf(state.tab);
+  const toIdx = TAB_ORDER.indexOf(tab);
+  const dir = toIdx>fromIdx ? 'forward' : (toIdx<fromIdx ? 'backward' : null);
   state.tab = tab;
   state.searchOpen = false;
   state.editorOpen = false;
-  render();
+  render(dir);
   window.scrollTo(0,0);
 }
-function render(){
-  applyTheme();
+function render(animDir){
   document.querySelectorAll('.tab-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.tab===state.tab);
   });
   const c = document.getElementById('content');
-  if(state.searchOpen){ c.innerHTML = renderSearch(); return; }
-  if(state.editorOpen){ c.innerHTML = renderEditor(); return; }
-  switch(state.tab){
-    case 'dashboard': c.innerHTML = renderDashboard(); break;
-    case 'workout': c.innerHTML = renderWorkout(); break;
-    case 'progress': c.innerHTML = renderProgress(); break;
-    case 'calendar': c.innerHTML = renderCalendar(); break;
-    case 'more': c.innerHTML = renderMore(); break;
+  if(state.searchOpen){ c.innerHTML = renderSearch(); }
+  else if(state.editorOpen){ c.innerHTML = renderEditor(); }
+  else {
+    switch(state.tab){
+      case 'dashboard': c.innerHTML = renderDashboard(); break;
+      case 'workout': c.innerHTML = renderWorkout(); break;
+      case 'progress': c.innerHTML = renderProgress(); break;
+      case 'calendar': c.innerHTML = renderCalendar(); break;
+      case 'more': c.innerHTML = renderMore(); break;
+    }
+  }
+  if(animDir){
+    c.classList.remove('anim-forward','anim-backward');
+    void c.offsetWidth;
+    c.classList.add(animDir==='forward' ? 'anim-forward' : 'anim-backward');
   }
 }
 
@@ -846,7 +798,6 @@ function renderWorkout(){
       <textarea class="notes" id="workoutNotes" placeholder="How did it feel? Court conditions, soreness, focus areas..." oninput="state.draftNotes=this.value">${escapeHtml(state.draftNotes)}</textarea>
     </div>
     <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="completeWorkout()">✅ Complete Workout</button>
-    <div style="text-align:center; font-size:10px; color:var(--text-dim); margin-top:10px; letter-spacing:.05em; text-transform:uppercase;">Swipe left / right to switch days</div>
     <div style="height:10px;"></div>
   `;
 }
@@ -939,7 +890,6 @@ function completeWorkout(){
   saveData();
   state.draftSets = {};
   state.draftNotes = '';
-  if(prExIds.length){ vibrate([100,60,100,60,200]); playPrFanfare(); }
   const msg = prExIds.length ? `🏆 Workout saved — ${prExIds.length} new PR${prExIds.length>1?'s':''}!` : '✅ Workout saved';
   showToast(msg, 4500, undoLast);
   switchTab('dashboard');
@@ -1040,7 +990,6 @@ function submitQuickAdd(exId){
   }
   saveData();
   state.quickAddExId = null;
-  if(isPr){ vibrate([100,60,100,60,200]); playPrFanfare(); }
   showToast(isPr?'🏆 New PR logged!':'Logged', 4500, undoLast);
   render();
 }
@@ -1126,7 +1075,7 @@ function renderDayDetail(dateStr, byDate){
   return html;
 }
 
-/* ---------------- More: bodyweight, measurements, photos, goals, program editor, settings ---------------- */
+/* ---------------- More: bodyweight, program editor, settings ---------------- */
 function renderMore(){
   const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date));
   const latestBw = bw[0];
@@ -1150,29 +1099,13 @@ function renderMore(){
       `).join('')}</div>` : `<div class="empty-state">No entries yet.</div>`}
     </div>
 
-    ${renderMeasurementsCard()}
-    ${renderPhotosCard()}
-    ${renderGoalsCard()}
-
     <div class="card">
       <div class="card-title">Program</div>
       <button class="btn btn-secondary btn-block" onclick="openEditor()">✏️ Customize Exercises &amp; Days</button>
     </div>
 
     <div class="card">
-      <div class="card-title">Appearance &amp; Behavior</div>
-      <div class="list-row">
-        <div class="list-row-title" style="font-size:14px;">Dark Mode</div>
-        <label class="switch"><input type="checkbox" ${state.data.settings.darkMode?'checked':''} onchange="toggleSetting('darkMode', this.checked)"><span class="slider"></span></label>
-      </div>
-      <div class="list-row">
-        <div class="list-row-title" style="font-size:14px;">Haptics</div>
-        <label class="switch"><input type="checkbox" ${state.data.settings.hapticsEnabled!==false?'checked':''} onchange="toggleSetting('hapticsEnabled', this.checked)"><span class="slider"></span></label>
-      </div>
-      <div class="list-row">
-        <div class="list-row-title" style="font-size:14px;">Sound</div>
-        <label class="switch"><input type="checkbox" ${state.data.settings.soundEnabled!==false?'checked':''} onchange="toggleSetting('soundEnabled', this.checked)"><span class="slider"></span></label>
-      </div>
+      <div class="card-title">Behavior</div>
       <div class="list-row">
         <div class="list-row-title" style="font-size:14px;">Open To Next Workout</div>
         <label class="switch"><input type="checkbox" ${state.data.settings.autoOpenNextWorkout?'checked':''} onchange="toggleSetting('autoOpenNextWorkout', this.checked)"><span class="slider"></span></label>
@@ -1191,14 +1124,12 @@ function renderMore(){
       <div class="card-title">Danger Zone</div>
       <button class="btn btn-danger btn-block" onclick="resetAllData()">Erase All Data</button>
     </div>
-    <div style="text-align:center; color:var(--text-dim); font-size:11px; padding:6px 0 20px; text-transform:uppercase; letter-spacing:.06em;">Stay Hard · data saved automatically</div>
-    ${state.viewingPhotoId ? renderPhotoModal() : ''}
+    <div style="text-align:center; color:var(--text-dim); font-size:11px; padding:6px 0 20px; text-transform:uppercase; letter-spacing:.06em;">Data saved automatically</div>
   `;
 }
 function toggleSetting(key, val){
   state.data.settings[key] = val;
   saveData();
-  if(key==='darkMode') applyTheme();
 }
 function logBodyweight(){
   const val = Number(document.getElementById('bwInput').value);
@@ -1208,8 +1139,6 @@ function logBodyweight(){
   showToast('Bodyweight logged');
   render();
 }
-
-/* ---- generic line chart (bodyweight + measurements) ---- */
 function renderLineChart(points){
   const w=300, h=140, padL=34, padR=10, padT=14, padB=22;
   const vals = points.map(p=>p.value);
@@ -1241,188 +1170,6 @@ function renderLineChart(points){
       <text x="${w-padR}" y="${h+9}" text-anchor="end" font-size="8" fill="var(--text-dim)" font-family="IBM Plex Mono">${prettyDate(points[points.length-1].date)}</text>
     </svg>
   `;
-}
-
-/* ---- body measurements ---- */
-function renderMeasurementsCard(){
-  return `
-    <div class="card">
-      <div class="card-title">Body Measurements</div>
-      <label class="field-label" style="margin-top:0;">Type</label>
-      <select class="text-input" id="measType">
-        ${MEASUREMENT_TYPES.map(t=>`<option ${t===state.measSelectedType?'selected':''}>${t}</option>`).join('')}
-      </select>
-      <label class="field-label">Value (in)</label>
-      <input class="text-input" type="number" step="0.1" id="measValue" placeholder="e.g. 15.5">
-      <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="logMeasurement()">Log</button>
-      ${renderMeasurementSection()}
-    </div>
-  `;
-}
-function measurementTypesPresent(){
-  return Array.from(new Set(state.data.measurements.map(m=>m.type)));
-}
-function renderMeasurementSection(){
-  const types = measurementTypesPresent();
-  if(!types.length) return `<div class="empty-state">No measurements yet.</div>`;
-  const sel = state.measSelectedType && types.includes(state.measSelectedType) ? state.measSelectedType : types[0];
-  const pts = state.data.measurements.filter(m=>m.type===sel).sort((a,b)=>a.date.localeCompare(b.date));
-  return `
-    <div class="pill-row" style="margin-top:12px; margin-bottom:6px;">
-      ${types.map(t=>`<div class="pill ${t===sel?'active':''}" onclick="selectMeasType('${t}')">${t}</div>`).join('')}
-    </div>
-    ${pts.length>=2 ? renderLineChart(pts.map(p=>({date:p.date,value:p.value}))) : ''}
-    <div style="margin-top:8px; max-height:140px; overflow-y:auto;">
-      ${pts.slice().reverse().slice(0,8).map(p=>`<div class="list-row" style="padding:6px 0;"><div class="list-row-sub">${prettyDate(p.date)}</div><div class="mono">${p.value} in</div></div>`).join('')}
-    </div>
-  `;
-}
-function selectMeasType(t){ state.measSelectedType = t; render(); }
-function logMeasurement(){
-  const type = document.getElementById('measType').value;
-  const val = Number(document.getElementById('measValue').value);
-  if(!val || val<=0){ showToast('Enter a valid value'); return; }
-  state.data.measurements.push({id:uid(), date:todayStr(), type, value:val});
-  state.measSelectedType = type;
-  saveData();
-  showToast('Measurement logged');
-  render();
-}
-
-/* ---- progress photos ---- */
-function renderPhotosCard(){
-  const photos = [...state.data.photos].sort((a,b)=>b.date.localeCompare(a.date));
-  return `
-    <div class="card">
-      <div class="card-title">Progress Photos</div>
-      <button class="btn btn-secondary btn-block" onclick="document.getElementById('photoInput').click()">📷 Add Photo</button>
-      ${photos.length ? `<div class="photo-grid" style="margin-top:12px;">${photos.map(p=>`
-        <img class="photo-thumb" src="${p.dataUrl}" onclick="openPhoto('${p.id}')">
-      `).join('')}</div>` : `<div class="empty-state">No photos yet. Stored only on this device.</div>`}
-    </div>
-  `;
-}
-function handlePhotoSelect(input){
-  const file = input.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    const img = new Image();
-    img.onload = function(){
-      const maxW = 640;
-      const scale = Math.min(1, maxW/img.width);
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width*scale);
-      canvas.height = Math.round(img.height*scale);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg',0.6);
-      snapshot();
-      state.data.photos.push({id:uid(), date:todayStr(), dataUrl});
-      saveData();
-      showToast('Photo added', 4500, undoLast);
-      render();
-    };
-    img.src = evt.target.result;
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
-}
-document.getElementById('photoInput').addEventListener('change', function(e){ handlePhotoSelect(this); });
-function openPhoto(id){ state.viewingPhotoId = id; render(); }
-function closePhoto(){ state.viewingPhotoId = null; render(); }
-function deletePhoto(id){
-  snapshot();
-  state.data.photos = state.data.photos.filter(p=>p.id!==id);
-  state.viewingPhotoId = null;
-  saveData();
-  showToast('Photo deleted', 4500, undoLast);
-  render();
-}
-function renderPhotoModal(){
-  const p = state.data.photos.find(x=>x.id===state.viewingPhotoId);
-  if(!p) return '';
-  return `
-    <div class="photo-modal" onclick="if(event.target===this) closePhoto()">
-      <img src="${p.dataUrl}">
-      <div class="list-row-sub" style="color:#aaa; margin-top:10px;">${prettyDate(p.date)}</div>
-      <div class="photo-modal-controls">
-        <button class="btn btn-secondary btn-sm" onclick="closePhoto()">Close</button>
-        <button class="btn btn-danger btn-sm" onclick="deletePhoto('${p.id}')">Delete</button>
-      </div>
-    </div>
-  `;
-}
-
-/* ---- goals ---- */
-function renderGoalsCard(){
-  return `
-    <div class="card">
-      <div class="card-title">Goals</div>
-      <label class="field-label" style="margin-top:0;">Goal Type</label>
-      <select class="text-input" id="goalType" onchange="onGoalTypeChange()">
-        <option value="exercise">Lift a specific exercise</option>
-        <option value="bodyweight">Reach a bodyweight</option>
-      </select>
-      <div id="goalExerciseWrap">
-        <label class="field-label">Exercise</label>
-        <select class="text-input" id="goalExercise">${allExercises().map(e=>`<option value="${e.id}">${e.name}</option>`).join('')}</select>
-      </div>
-      <label class="field-label">Target Weight (lb)</label>
-      <input class="text-input" type="number" id="goalTarget" placeholder="e.g. 40">
-      <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="addGoal()">Add Goal</button>
-      <div style="margin-top:14px;">${renderGoalsList()}</div>
-    </div>
-  `;
-}
-function onGoalTypeChange(){
-  const type = document.getElementById('goalType').value;
-  document.getElementById('goalExerciseWrap').style.display = type==='exercise' ? 'block' : 'none';
-}
-function addGoal(){
-  const type = document.getElementById('goalType').value;
-  const target = Number(document.getElementById('goalTarget').value);
-  if(!target || target<=0){ showToast('Enter a valid target'); return; }
-  const goal = {id:uid(), type, target, createdAt:todayStr()};
-  if(type==='exercise') goal.exId = document.getElementById('goalExercise').value;
-  state.data.goals.push(goal);
-  saveData();
-  showToast('Goal added');
-  render();
-}
-function removeGoal(id){
-  snapshot();
-  state.data.goals = state.data.goals.filter(g=>g.id!==id);
-  saveData();
-  showToast('Goal removed', 4500, undoLast);
-  render();
-}
-function renderGoalsList(){
-  if(!state.data.goals.length) return `<div class="empty-state">No goals yet.</div>`;
-  return state.data.goals.map(g=>{
-    let current=0, label='';
-    if(g.type==='exercise'){
-      const ex = exerciseById(g.exId);
-      label = ex ? ex.name : ((state.data.exercises[g.exId]||{}).name || 'Removed exercise');
-      const pb = personalBest(g.exId);
-      current = pb ? pb.maxWeight : 0;
-    } else {
-      const bwSorted = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date));
-      current = bwSorted[0] ? bwSorted[0].weight : 0;
-      label = 'Bodyweight';
-    }
-    const pct = Math.max(0, Math.min(100, (current/g.target)*100));
-    return `
-      <div style="margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
-          <span>${label}</span>
-          <span class="mono">${current} / ${g.target} lb</span>
-        </div>
-        <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
-        <div style="text-align:right; margin-top:3px;"><span style="font-size:11px; color:var(--danger); cursor:pointer; text-transform:uppercase;" onclick="removeGoal('${g.id}')">Remove</span></div>
-      </div>
-    `;
-  }).join('');
 }
 
 /* ---- program editor ---- */
@@ -1562,7 +1309,7 @@ document.getElementById('importFile').addEventListener('change', function(e){
   e.target.value = '';
 });
 function resetAllData(){
-  if(!confirm('This will permanently erase all workouts, bodyweight, measurements, photos, and goals. Continue?')) return;
+  if(!confirm('This will permanently erase all workouts and bodyweight logs. Continue?')) return;
   snapshot();
   state.data = defaultData();
   saveData();
@@ -1629,8 +1376,6 @@ function timerToggle(){
         clearInterval(t.intervalId);
         t.running=false; t.remaining=0;
         updateTimerDisplay();
-        vibrate([200,80,200]);
-        playBeep(880,220);
         showToast('⏱ Rest complete');
         document.getElementById('fab').classList.remove('running');
         document.getElementById('timerStartBtn').textContent='Start';
@@ -1658,7 +1403,7 @@ function updateTimerDisplay(){
   if(el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-/* ---------------- swipe between workout days ---------------- */
+/* ---------------- swipe between pages ---------------- */
 let _touchStartX=null, _touchStartY=null;
 document.getElementById('content').addEventListener('touchstart', function(e){
   _touchStartX = e.touches[0].clientX; _touchStartY = e.touches[0].clientY;
@@ -1668,10 +1413,11 @@ document.getElementById('content').addEventListener('touchend', function(e){
   const dx = e.changedTouches[0].clientX - _touchStartX;
   const dy = e.changedTouches[0].clientY - _touchStartY;
   _touchStartX = null;
-  if(Math.abs(dx)>60 && Math.abs(dy)<50 && state.tab==='workout' && !state.searchOpen && !state.editorOpen){
-    let nd = state.workoutDay + (dx<0?1:-1);
-    if(nd<1) nd=4; if(nd>4) nd=1;
-    changeWorkoutDay(nd);
+  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen){
+    const curIdx = TAB_ORDER.indexOf(state.tab);
+    let newIdx = curIdx + (dx<0 ? 1 : -1);
+    newIdx = Math.max(0, Math.min(TAB_ORDER.length-1, newIdx));
+    if(newIdx !== curIdx) switchTab(TAB_ORDER[newIdx]);
   }
 }, {passive:true});
 

@@ -254,6 +254,25 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 .heat-cell{width:10px; height:10px; border-radius:2px; background:var(--bg-card-2);}
 .heat-cell.active{background:var(--accent);}
 .editor-row-btn{width:32px; height:32px; font-size:12px; flex-shrink:0;}
+.focus-screen{
+  position:fixed; inset:0; z-index:150; background:#000; color:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  padding:calc(20px + var(--safe-top)) 20px calc(20px + var(--safe-bottom));
+  overflow-y:auto;
+}
+.focus-screen.focus-rest{justify-content:center;}
+.focus-top{width:100%; max-width:420px; display:flex; justify-content:space-between; align-items:center; margin-bottom:26px;}
+.focus-progress{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#8f8f8f; font-weight:700;}
+.focus-ex-name{font-family:'Oswald'; font-size:26px; text-transform:uppercase; font-weight:700; text-align:center; max-width:420px; line-height:1.2;}
+.focus-set-label{font-size:13px; color:#8f8f8f; text-transform:uppercase; letter-spacing:.08em; margin-top:8px; font-weight:700;}
+.focus-hint{font-size:12px; color:#8f8f8f; margin-top:6px;}
+.focus-stopwatch{font-size:54px; margin:26px 0; font-weight:600;}
+.focus-inputs{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:340px; margin-bottom:22px;}
+.focus-main-btn{max-width:340px; padding:16px; font-size:15px;}
+.focus-secondary-btn{max-width:340px; margin-top:10px;}
+.focus-rest-label{font-size:13px; color:#8f8f8f; text-transform:uppercase; letter-spacing:.06em; margin-top:6px; text-align:center;}
+.focus-countdown{font-size:68px; margin:22px 0; font-weight:600; color:var(--accent);}
+.focus-rest-btn{max-width:280px;}
 ::-webkit-scrollbar{display:none;}
 </style>
 </head>
@@ -303,7 +322,7 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -411,12 +430,16 @@ function defaultData(){
   return {
     workouts: [],
     bodyweight: [],
+    vacations: [],
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { autoOpenNextWorkout:false, lastExportAt:null },
+    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2 },
     meta: { createdAt: new Date().toISOString() }
   };
 }
+
+const REST_BETWEEN_SETS = 60;
+const REST_BETWEEN_EXERCISES = 100;
 
 let state = {
   data: null,
@@ -437,6 +460,17 @@ let state = {
   calMonth: new Date().getMonth(),
   calSelected: null,
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
+  focusOpen: false,
+  focusDay: 1,
+  focusExIdx: 0,
+  focusSetIdx: 0,
+  focusPhase: 'set',
+  focusStopwatchSec: 0,
+  focusStopwatchRunning: false,
+  focusStopwatchInterval: null,
+  focusRestTotal: 60,
+  focusRestRemaining: 60,
+  focusRestInterval: null,
   loaded:false,
 };
 let lastSnapshot = null;
@@ -469,6 +503,7 @@ async function loadData(){
         ...d, ...parsed,
         program: parsed.program || d.program,
         exercises: parsed.exercises || d.exercises,
+        vacations: parsed.vacations || [],
         settings: {...d.settings, ...(parsed.settings||{})}
       };
     } else {
@@ -573,18 +608,44 @@ function suggestedWeight(exId){
 function workoutDatesSet(){
   return new Set(state.data.workouts.map(w=>w.date));
 }
+function getActiveVacation(){
+  return (state.data.vacations||[]).find(v=>!v.end);
+}
+function isVacationDay(dateStr){
+  return (state.data.vacations||[]).some(v => dateStr >= v.start && dateStr <= (v.end || todayStr()));
+}
+function calendarGapDays(dateA, dateB){
+  const a = new Date(dateA+'T00:00:00'), b = new Date(dateB+'T00:00:00');
+  return Math.round((b-a)/86400000) - 1;
+}
+function vacationDaysBetween(dateA, dateB){
+  let count = 0;
+  const cursor = new Date(dateA+'T00:00:00');
+  cursor.setDate(cursor.getDate()+1);
+  const end = new Date(dateB+'T00:00:00');
+  while(cursor < end){
+    if(isVacationDay(dateToStr(cursor))) count++;
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return count;
+}
+function effectiveGap(dateA, dateB){
+  const raw = calendarGapDays(dateA, dateB);
+  const vac = vacationDaysBetween(dateA, dateB);
+  return Math.max(0, raw - vac);
+}
 function computeStreak(){
+  const tol = (state.data.settings.streakGapTolerance!=null) ? state.data.settings.streakGapTolerance : 2;
   const dates = Array.from(workoutDatesSet()).sort().reverse();
   if(!dates.length) return 0;
   const today = todayStr();
-  const yest = dateToStr(new Date(Date.now()-86400000));
-  if(dates[0] !== today && dates[0] !== yest) return 0;
+  const onVacationNow = isVacationDay(today);
+  const gapToToday = effectiveGap(dates[0], today);
+  if(!onVacationNow && gapToToday > tol) return 0;
   let streak = 1;
-  let cursor = new Date(dates[0]+'T00:00:00');
   for(let i=1;i<dates.length;i++){
-    const prevDay = dateToStr(new Date(cursor.getTime()-86400000));
-    if(dates[i]===prevDay){ streak++; cursor = new Date(dates[i]+'T00:00:00'); }
-    else if(dates[i]===dateToStr(cursor)) { continue; }
+    const gap = effectiveGap(dates[i], dates[i-1]);
+    if(gap <= tol) streak++;
     else break;
   }
   return streak;
@@ -631,6 +692,7 @@ function switchTab(tab){
   state.searchOpen = false;
   state.editorOpen = false;
   state.cooldownOpen = false;
+  state.focusOpen = false;
   render(dir);
   window.scrollTo(0,0);
 }
@@ -641,6 +703,7 @@ function render(animDir){
   const c = document.getElementById('content');
   if(state.searchOpen){ c.innerHTML = renderSearch(); }
   else if(state.editorOpen){ c.innerHTML = renderEditor(); }
+  else if(state.focusOpen){ c.innerHTML = renderFocus(); }
   else if(state.cooldownOpen){ c.innerHTML = renderCooldown(); }
   else {
     switch(state.tab){
@@ -671,7 +734,7 @@ function renderDashboard(){
     ${shouldShowBackupReminder() ? renderBackupReminder() : ''}
     <div class="streak-hero">
       <div class="streak-num mono">${streak}</div>
-      <div class="streak-label">Day Workout Streak ${streak>0?'🔥':''}</div>
+      <div class="streak-label">${getActiveVacation() ? '🏖️ On Vacation — Streak Frozen' : `Day Workout Streak ${streak>0?'🔥':''}`}</div>
     </div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num">${state.data.workouts.length}</div><div class="stat-label">Total Workouts</div></div>
@@ -835,6 +898,7 @@ function renderWorkout(){
         <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="repeatLastWorkout()">↺ Repeat Last</button>
       </div>
     </div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:12px; padding:14px; font-size:14px;" onclick="startFocusMode()">▶ Start Focus Mode</button>
     ${exList.map(ex=>renderExerciseCard(ex)).join('')}
     <div class="card">
       <div class="card-title">Workout Notes</div>
@@ -979,6 +1043,190 @@ function renderCooldown(){
 function closeCooldown(){
   state.cooldownOpen = false;
   switchTab('dashboard');
+}
+
+/* ---------------- Focus Mode ---------------- */
+function formatMMSS(sec){
+  const s = Math.max(0, sec);
+  const m = Math.floor(s/60), r = s%60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+function focusExerciseList(){
+  const def = state.data.program[state.focusDay];
+  return def.exerciseIds.map(id=>({id, name:(state.data.exercises[id]||{name:id}).name}));
+}
+function startFocusMode(){
+  const day = state.workoutDay;
+  ensureDraft(day);
+  state.focusOpen = true;
+  state.focusDay = day;
+  state.focusExIdx = 0;
+  state.focusSetIdx = 0;
+  state.focusPhase = 'set';
+  resetFocusStopwatch();
+  render();
+}
+function exitFocusMode(){
+  stopFocusStopwatch();
+  stopFocusRest();
+  state.focusOpen = false;
+  render();
+}
+function exitFocusModeSilently(){
+  stopFocusStopwatch();
+  stopFocusRest();
+  state.focusOpen = false;
+}
+function renderFocus(){
+  return state.focusPhase==='set' ? renderFocusSet() : renderFocusRest();
+}
+function renderFocusSet(){
+  const list = focusExerciseList();
+  const ex = list[state.focusExIdx];
+  ensureDraft(state.focusDay);
+  const totalSets = state.draftSets[ex.id] ? state.draftSets[ex.id].length : 3;
+  const setObj = state.draftSets[ex.id][state.focusSetIdx];
+  const prev = previousWeightFor(ex.id);
+  const sugg = suggestedWeight(ex.id);
+  return `
+    <div class="focus-screen">
+      <div class="focus-top">
+        <button class="icon-btn" onclick="exitFocusMode()">✕</button>
+        <div class="focus-progress">Exercise ${state.focusExIdx+1} / ${list.length}</div>
+      </div>
+      <div class="focus-ex-name">${ex.name}</div>
+      <div class="focus-set-label">Set ${state.focusSetIdx+1} of ${totalSets}</div>
+      ${prev ? `<div class="focus-hint">Last: ${prev.maxWeight} lb × ${prev.reps}</div>` : ''}
+      ${sugg ? `<div class="focus-hint" style="color:var(--accent);">Suggested ${sugg} lb</div>` : ''}
+      <div class="focus-stopwatch mono" id="focusStopwatchDisplay">${formatMMSS(state.focusStopwatchSec)}</div>
+      <div class="focus-inputs">
+        <div>
+          <div class="set-input-label">Weight (lb)</div>
+          <input class="set-input" type="number" inputmode="decimal" id="focusWeightInput" value="${setObj.weight}" oninput="updateFocusSet('weight', this.value)">
+        </div>
+        <div>
+          <div class="set-input-label">Reps</div>
+          <input class="set-input" type="number" inputmode="numeric" id="focusRepsInput" value="${setObj.reps}" oninput="updateFocusSet('reps', this.value)">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block focus-main-btn" id="focusMainBtn" onclick="focusMainButton()">${state.focusStopwatchRunning ? 'Complete Set' : 'Start Set'}</button>
+      <button class="btn btn-secondary btn-block focus-secondary-btn" onclick="completeFocusSet()">Skip This Set →</button>
+    </div>
+  `;
+}
+function renderFocusRest(){
+  const isExerciseRest = state.focusPhase==='rest-exercise';
+  const list = focusExerciseList();
+  const nextEx = isExerciseRest ? list[state.focusExIdx+1] : list[state.focusExIdx];
+  return `
+    <div class="focus-screen focus-rest">
+      <div class="focus-top">
+        <button class="icon-btn" onclick="exitFocusMode()">✕</button>
+        <div class="focus-progress">${isExerciseRest ? 'Rest — Next Exercise' : 'Rest — Next Set'}</div>
+      </div>
+      <div class="focus-rest-label">${isExerciseRest ? 'Nice work. Recover before:' : 'Rest up for your next set of:'}</div>
+      <div class="focus-ex-name">${nextEx ? nextEx.name : ''}</div>
+      <div class="focus-countdown mono" id="focusRestDisplay">${formatMMSS(state.focusRestRemaining)}</div>
+      <div class="timer-presets" style="max-width:220px; margin:0 auto 18px;">
+        <div class="pill" onclick="adjustFocusRest(-15)">-15s</div>
+        <div class="pill" onclick="adjustFocusRest(15)">+15s</div>
+      </div>
+      <button class="btn btn-primary btn-block focus-rest-btn" onclick="skipFocusRest()">Skip Rest</button>
+    </div>
+  `;
+}
+function updateFocusSet(field, val){
+  const list = focusExerciseList();
+  const ex = list[state.focusExIdx];
+  state.draftSets[ex.id][state.focusSetIdx][field] = val;
+}
+function focusMainButton(){
+  if(!state.focusStopwatchRunning) startFocusStopwatch();
+  else completeFocusSet();
+}
+function startFocusStopwatch(){
+  state.focusStopwatchRunning = true;
+  state.focusStopwatchSec = 0;
+  updateFocusStopwatchDisplay();
+  state.focusStopwatchInterval = setInterval(()=>{
+    state.focusStopwatchSec++;
+    updateFocusStopwatchDisplay();
+  }, 1000);
+  const btn = document.getElementById('focusMainBtn');
+  if(btn) btn.textContent = 'Complete Set';
+}
+function stopFocusStopwatch(){
+  if(state.focusStopwatchInterval){ clearInterval(state.focusStopwatchInterval); state.focusStopwatchInterval=null; }
+  state.focusStopwatchRunning = false;
+}
+function updateFocusStopwatchDisplay(){
+  const el = document.getElementById('focusStopwatchDisplay');
+  if(el) el.textContent = formatMMSS(state.focusStopwatchSec);
+}
+function resetFocusStopwatch(){
+  stopFocusStopwatch();
+  state.focusStopwatchSec = 0;
+}
+function completeFocusSet(){
+  stopFocusStopwatch();
+  const list = focusExerciseList();
+  const ex = list[state.focusExIdx];
+  const totalSets = state.draftSets[ex.id].length;
+  const isLastSetOfExercise = state.focusSetIdx >= totalSets-1;
+  const isLastExercise = state.focusExIdx >= list.length-1;
+  if(isLastSetOfExercise && isLastExercise){
+    exitFocusModeSilently();
+    completeWorkout();
+    render();
+    return;
+  }
+  if(isLastSetOfExercise){
+    state.focusPhase = 'rest-exercise';
+    beginFocusRest(REST_BETWEEN_EXERCISES);
+  } else {
+    state.focusPhase = 'rest-set';
+    beginFocusRest(REST_BETWEEN_SETS);
+  }
+  render();
+}
+function beginFocusRest(seconds){
+  state.focusRestTotal = seconds;
+  state.focusRestRemaining = seconds;
+  stopFocusRest();
+  state.focusRestInterval = setInterval(()=>{
+    state.focusRestRemaining--;
+    updateFocusRestDisplay();
+    if(state.focusRestRemaining<=0){
+      advanceAfterRest();
+    }
+  }, 1000);
+}
+function stopFocusRest(){
+  if(state.focusRestInterval){ clearInterval(state.focusRestInterval); state.focusRestInterval=null; }
+}
+function updateFocusRestDisplay(){
+  const el = document.getElementById('focusRestDisplay');
+  if(el) el.textContent = formatMMSS(state.focusRestRemaining);
+}
+function adjustFocusRest(delta){
+  state.focusRestRemaining = Math.max(0, state.focusRestRemaining + delta);
+  updateFocusRestDisplay();
+}
+function skipFocusRest(){
+  stopFocusRest();
+  advanceAfterRest();
+}
+function advanceAfterRest(){
+  stopFocusRest();
+  if(state.focusPhase==='rest-exercise'){
+    state.focusExIdx++;
+    state.focusSetIdx = 0;
+  } else {
+    state.focusSetIdx++;
+  }
+  state.focusPhase = 'set';
+  resetFocusStopwatch();
+  render();
 }
 
 /* ---------------- Progress ---------------- */
@@ -1204,7 +1452,13 @@ function renderMore(){
         <div class="list-row-title" style="font-size:14px;">Open To Next Workout</div>
         <label class="switch"><input type="checkbox" ${state.data.settings.autoOpenNextWorkout?'checked':''} onchange="toggleSetting('autoOpenNextWorkout', this.checked)"><span class="slider"></span></label>
       </div>
+      <label class="field-label">Streak Rest Day Tolerance</label>
+      <div class="pill-row" style="margin-bottom:0;">
+        ${[0,1,2,3].map(n=>`<div class="pill ${((state.data.settings.streakGapTolerance??2)===n)?'active':''}" onclick="setStreakTolerance(${n})">${n} day${n===1?'':'s'}</div>`).join('')}
+      </div>
     </div>
+
+    ${renderVacationCard()}
 
     <div class="card">
       <div class="card-title">Backup</div>
@@ -1230,6 +1484,43 @@ function renderMore(){
 function toggleSetting(key, val){
   state.data.settings[key] = val;
   saveData();
+}
+function setStreakTolerance(n){
+  state.data.settings.streakGapTolerance = n;
+  saveData();
+  render();
+}
+function renderVacationCard(){
+  const active = getActiveVacation();
+  return `
+    <div class="card">
+      <div class="card-title">Vacation Mode</div>
+      ${active ? `
+        <div class="list-row-sub" style="margin-bottom:10px;">On vacation since ${prettyDate(active.start)} — your streak is frozen.</div>
+        <button class="btn btn-secondary btn-block" onclick="endVacation()">End Vacation</button>
+      ` : `
+        <div class="list-row-sub" style="margin-bottom:10px;">Going away? Freeze your streak so missed days don't break it.</div>
+        <button class="btn btn-secondary btn-block" onclick="startVacation()">🏖️ Start Vacation</button>
+      `}
+    </div>
+  `;
+}
+function startVacation(){
+  if(getActiveVacation()) return;
+  snapshot();
+  state.data.vacations.push({start:todayStr(), end:null});
+  saveData();
+  showToast('Vacation mode on — streak frozen', 4500, undoLast);
+  render();
+}
+function endVacation(){
+  const v = getActiveVacation();
+  if(!v) return;
+  snapshot();
+  v.end = todayStr();
+  saveData();
+  showToast('Welcome back — streak resumed', 4500, undoLast);
+  render();
 }
 async function forceUpdate(){
   showToast('Checking for updates…');
@@ -1529,7 +1820,7 @@ document.getElementById('content').addEventListener('touchend', function(e){
   const dx = e.changedTouches[0].clientX - _touchStartX;
   const dy = e.changedTouches[0].clientY - _touchStartY;
   _touchStartX = null;
-  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen && !state.cooldownOpen){
+  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen && !state.cooldownOpen && !state.focusOpen){
     const curIdx = TAB_ORDER.indexOf(state.tab);
     let newIdx = curIdx + (dx<0 ? 1 : -1);
     newIdx = Math.max(0, Math.min(TAB_ORDER.length-1, newIdx));

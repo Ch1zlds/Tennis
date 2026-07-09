@@ -303,6 +303,7 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
+const APP_VERSION = '1.3.0';
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -351,6 +352,37 @@ const DEFAULT_EXERCISES = {
   arnold_press:{name:'Dumbbell Arnold Press'}, wrist_curl:{name:'Dumbbell Wrist Curl (Elbow Guard)'},
 };
 
+const STRETCHES_BY_DAY = {
+  1: [
+    {name:'Cross-Body Shoulder Stretch', duration:'30s each side', note:'Pull one arm across your chest, holding just above the elbow.'},
+    {name:'Doorway Chest Stretch', duration:'30s each side', note:'Forearm on the doorframe, lean forward gently to open the chest.'},
+    {name:'Overhead Triceps Stretch', duration:'30s each side', note:'Reach one hand down your back, use the other to gently press the elbow.'},
+    {name:'Wrist Flexor Stretch', duration:'20s each side', note:'Straighten the arm, pull fingers back gently — key for serve-arm recovery.'},
+    {name:"Child's Pose Reach", duration:'45s', note:'Sink hips to heels, walk hands forward to decompress the shoulders.'},
+  ],
+  2: [
+    {name:'Standing Quad Stretch', duration:'30s each side', note:'Pull heel to glute, keep knees together.'},
+    {name:'Kneeling Hip Flexor Stretch', duration:'30s each side', note:'Back knee down, push hips forward gently.'},
+    {name:'Standing Hamstring Stretch', duration:'30s each side', note:'Heel forward, hinge at the hips with a flat back.'},
+    {name:'Calf Stretch on Wall', duration:'30s each side', note:'Back leg straight, heel down, lean into the wall.'},
+    {name:'Figure-4 Glute Stretch', duration:'30s each side', note:'Ankle over knee, sit back until you feel the glute open up.'},
+  ],
+  3: [
+    {name:'Cat-Cow', duration:'45s', note:'Slow spinal flexion and extension to release the lower back.'},
+    {name:'Seated Spinal Twist', duration:'30s each side', note:'Rotate through the torso, keep hips square.'},
+    {name:'Overhead Side Bend', duration:'30s each side', note:'Reach overhead and lean sideways to open the lats.'},
+    {name:'Cobra Stretch', duration:'30s', note:'Gentle backbend to release the core after rotational work.'},
+    {name:'Forearm Stretch', duration:'20s each side', note:'Extend the arm, pull fingers back — eases grip fatigue from rows.'},
+  ],
+  4: [
+    {name:'Standing Forward Fold', duration:'45s', note:'Let the head and arms hang heavy, soften the knees.'},
+    {name:"World's Greatest Stretch", duration:'30s each side', note:'Lunge with a rotation — resets hips, back and shoulders together.'},
+    {name:'Downward Dog', duration:'45s', note:'Full posterior chain release after a power-focused session.'},
+    {name:'Standing Side Bend', duration:'20s each side', note:'Reach overhead and lean, opening the obliques.'},
+    {name:'Deep Squat Hold', duration:'45s', note:'Sit low, chest up — resets the hips and ankles.'},
+  ],
+};
+
 function allExercises(){
   const out = [];
   for(const day of [1,2,3,4]){
@@ -395,6 +427,9 @@ let state = {
   searchOpen: false,
   searchQuery: '',
   editorOpen: false,
+  cooldownOpen: false,
+  cooldownDay: 1,
+  chartMode: 'compact',
   expandedIds: new Set(),
   quickAddExId: null,
   backupReminderDismissed: false,
@@ -529,6 +564,12 @@ function fourWeeksAgoEntry(exId){
   if(best && bestDiff <= 5*86400000) return best;
   return null;
 }
+function suggestedWeight(exId){
+  const prev = previousWeightFor(exId);
+  if(!prev || prev.maxWeight<=0) return null;
+  const inc = prev.maxWeight >= 25 ? 5 : 2.5;
+  return Math.round((prev.maxWeight + inc) * 2) / 2;
+}
 function workoutDatesSet(){
   return new Set(state.data.workouts.map(w=>w.date));
 }
@@ -589,6 +630,7 @@ function switchTab(tab){
   state.tab = tab;
   state.searchOpen = false;
   state.editorOpen = false;
+  state.cooldownOpen = false;
   render(dir);
   window.scrollTo(0,0);
 }
@@ -599,6 +641,7 @@ function render(animDir){
   const c = document.getElementById('content');
   if(state.searchOpen){ c.innerHTML = renderSearch(); }
   else if(state.editorOpen){ c.innerHTML = renderEditor(); }
+  else if(state.cooldownOpen){ c.innerHTML = renderCooldown(); }
   else {
     switch(state.tab){
       case 'dashboard': c.innerHTML = renderDashboard(); break;
@@ -824,6 +867,7 @@ function renderExerciseCard(ex){
   const prev = previousWeightFor(ex.id);
   const pb = personalBest(ex.id);
   const fw = fourWeeksAgoEntry(ex.id);
+  const sugg = suggestedWeight(ex.id);
   const sets = state.draftSets[ex.id];
   return `
     <div class="ex-card">
@@ -832,6 +876,7 @@ function renderExerciseCard(ex){
           <div class="ex-name">${ex.name}</div>
           <div class="ex-prev">${prev ? `Last: ${prev.maxWeight} lb × ${prev.reps} <span style="opacity:.6;">(${prettyDate(prev.date)})</span>` : 'No history yet'}</div>
           ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${fw.maxWeight} lb × ${fw.reps}</div>` : ''}
+          ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Suggested ${sugg} lb — tap to apply</span></div>` : ''}
         </div>
         ${pb ? `<span class="tag">PB ${pb.maxWeight} lb</span>` : ''}
       </div>
@@ -855,6 +900,16 @@ function renderExerciseCard(ex){
 }
 function updateSet(exId, idx, field, val){
   state.draftSets[exId][idx][field] = val;
+}
+function applySuggestedWeight(exId, weight){
+  ensureDraft(state.workoutDay);
+  const set0 = state.draftSets[exId][0];
+  set0.weight = String(weight);
+  if(!set0.reps){
+    const prev = previousWeightFor(exId);
+    if(prev) set0.reps = String(prev.reps);
+  }
+  render();
 }
 function addSet(exId){
   state.draftSets[exId].push({weight:'',reps:''});
@@ -892,6 +947,37 @@ function completeWorkout(){
   state.draftNotes = '';
   const msg = prExIds.length ? `🏆 Workout saved — ${prExIds.length} new PR${prExIds.length>1?'s':''}!` : '✅ Workout saved';
   showToast(msg, 4500, undoLast);
+  state.cooldownOpen = true;
+  state.cooldownDay = day;
+  render();
+}
+function renderCooldown(){
+  const day = state.cooldownDay;
+  const list = STRETCHES_BY_DAY[day] || [];
+  const dayName = (state.data.program[day]||{}).name || '';
+  return `
+    <div class="card quote-card">
+      <div class="quote-text">Nice work. Now cool down properly.</div>
+      <div class="quote-attr">${dayName ? `After: ${dayName}` : ''}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cool Down Stretches</div>
+      ${list.map(s=>`
+        <div class="list-row" style="align-items:flex-start;">
+          <div>
+            <div class="list-row-title">${s.name}</div>
+            <div class="list-row-sub" style="margin-top:3px; line-height:1.4;">${s.note}</div>
+          </div>
+          <div class="tag" style="flex-shrink:0; margin-left:10px; white-space:nowrap;">${s.duration}</div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="closeCooldown()">Done — Go To Dashboard</button>
+    <div style="height:10px;"></div>
+  `;
+}
+function closeCooldown(){
+  state.cooldownOpen = false;
   switchTab('dashboard');
 }
 
@@ -911,10 +997,18 @@ function renderProgress(){
       }).join('') : `<div class="empty-state">Complete a workout to start tracking bests.</div>`}
     </div>
     <div class="card">
-      <div class="card-title">Every Exercise — History &amp; Gains</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+        <div class="card-title" style="margin-bottom:0;">Every Exercise — History &amp; Gains</div>
+        <button class="btn btn-secondary btn-sm" onclick="toggleChartMode()">${state.chartMode==='expanded' ? '📉 Compact' : '📈 Expanded'}</button>
+      </div>
+      <div style="height:8px;"></div>
       ${exs.map(e=>renderExerciseProgressRow(e)).join('')}
     </div>
   `;
+}
+function toggleChartMode(){
+  state.chartMode = state.chartMode==='expanded' ? 'compact' : 'expanded';
+  render();
 }
 function renderExerciseProgressRow(ex){
   const h = exerciseHistory(ex.id);
@@ -931,7 +1025,7 @@ function renderExerciseProgressRow(ex){
           ${gain!==null ? `<div class="list-row-val ${gain>=0?'gain-pos':'gain-neg'}">${gain>=0?'+':''}${gain.toFixed(1)}%</div>` : `<div class="list-row-sub">—</div>`}
         </div>
       </div>
-      ${h.length>=2 ? renderMiniSparkline(h.map(r=>r.maxWeight)) : ''}
+      ${h.length>=2 ? (state.chartMode==='expanded' ? renderLineChart(h.map(r=>({date:r.date, value:r.maxWeight}))) : renderMiniSparkline(h.map(r=>r.maxWeight))) : ''}
       <div style="display:${isOpen?'block':'none'}; margin-top:8px;">
         ${!ex.archived ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openQuickAdd('${ex.id}')">+ Quick Log</button>
         ${state.quickAddExId===ex.id ? renderQuickAddForm(ex.id) : ''}` : ''}
@@ -1121,6 +1215,12 @@ function renderMore(){
     </div>
 
     <div class="card">
+      <div class="card-title">App</div>
+      <div class="list-row-sub" style="margin-bottom:10px;">Version ${APP_VERSION}</div>
+      <button class="btn btn-secondary btn-block" onclick="forceUpdate()">🔄 Check for Updates</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">Danger Zone</div>
       <button class="btn btn-danger btn-block" onclick="resetAllData()">Erase All Data</button>
     </div>
@@ -1130,6 +1230,22 @@ function renderMore(){
 function toggleSetting(key, val){
   state.data.settings[key] = val;
   saveData();
+}
+async function forceUpdate(){
+  showToast('Checking for updates…');
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const r of regs){ await r.unregister(); }
+    }
+    if(window.caches){
+      const keys = await caches.keys();
+      for(const k of keys){ await caches.delete(k); }
+    }
+  }catch(e){}
+  setTimeout(()=>{
+    window.location.href = location.origin + location.pathname + '?t=' + Date.now();
+  }, 300);
 }
 function logBodyweight(){
   const val = Number(document.getElementById('bwInput').value);
@@ -1413,7 +1529,7 @@ document.getElementById('content').addEventListener('touchend', function(e){
   const dx = e.changedTouches[0].clientX - _touchStartX;
   const dy = e.changedTouches[0].clientY - _touchStartY;
   _touchStartX = null;
-  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen){
+  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen && !state.cooldownOpen){
     const curIdx = TAB_ORDER.indexOf(state.tab);
     let newIdx = curIdx + (dx<0 ? 1 : -1);
     newIdx = Math.max(0, Math.min(TAB_ORDER.length-1, newIdx));

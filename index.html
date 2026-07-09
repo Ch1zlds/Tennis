@@ -74,26 +74,36 @@ h1,h2,h3,.display{
   width:38px;height:38px;border-radius:8px;border:1px solid var(--line);
   background:var(--bg-card); color:var(--text); display:flex;align-items:center;justify-content:center;
   font-size:16px; cursor:pointer;
+  transition:transform .1s ease, filter .1s ease;
 }
+.icon-btn:active{transform:scale(0.93); filter:brightness(0.85);}
 
 /* content */
 .content{padding:16px 16px 20px;}
 @keyframes slideInFromRight{from{transform:translateX(28px); opacity:0;} to{transform:translateX(0); opacity:1;}}
 @keyframes slideInFromLeft{from{transform:translateX(-28px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+@keyframes overlayFade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .content.anim-forward{animation:slideInFromRight .22s ease;}
 .content.anim-backward{animation:slideInFromLeft .22s ease;}
+.content.overlay-anim{animation:overlayFade .2s ease;}
 .card{
   background:var(--bg-card);
   border:1px solid var(--line);
   border-radius:var(--radius);
   padding:16px;
   margin-bottom:12px;
+  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset, 0 6px 18px rgba(0,0,0,0.35);
 }
 .card-title{font-size:12px; letter-spacing:0.12em; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px; font-weight:700; display:flex; align-items:center; gap:7px;}
-.card-title::before{content:''; width:7px; height:7px; background:var(--accent); flex-shrink:0;}
+.card-title::before{content:''; width:7px; height:7px; background:var(--accent); flex-shrink:0; transform:rotate(45deg);}
 
 /* quote */
-.quote-card{background:#000; border:1px solid var(--line); position:relative; overflow:hidden; padding:18px 16px;}
+.quote-card{
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 16px),
+    #000;
+  border:1px solid var(--line); position:relative; overflow:hidden; padding:18px 16px;
+}
 .quote-card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);}
 .quote-text{font-family:'Oswald'; font-size:17px; color:#fff; text-transform:uppercase; letter-spacing:0.01em; line-height:1.35; padding-left:10px; font-weight:600;}
 .quote-attr{font-size:10px; color:#8f8f8f; letter-spacing:0.14em; margin-top:10px; padding-left:10px; font-weight:600;}
@@ -107,7 +117,9 @@ h1,h2,h3,.display{
 .stat-num{font-family:'IBM Plex Mono'; font-weight:600; font-size:28px; line-height:1; color:var(--accent);}
 .stat-label{font-size:11px; color:var(--text-dim); margin-top:6px; letter-spacing:0.05em; text-transform:uppercase; font-weight:600;}
 .streak-hero{
-  background:linear-gradient(135deg, var(--court) 0%, var(--ink) 90%);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 2px, transparent 2px, transparent 14px),
+    linear-gradient(135deg, var(--court) 0%, var(--ink) 90%);
   border-radius:var(--radius); padding:20px; margin-bottom:12px; position:relative; overflow:hidden;
   border:1px solid var(--line);
 }
@@ -115,7 +127,7 @@ h1,h2,h3,.display{
   content:'';position:absolute; right:-30px; top:-30px; width:140px;height:140px;border-radius:50%;
   background:radial-gradient(circle, rgba(255,45,18,0.25), transparent 70%);
 }
-.streak-num{font-family:'IBM Plex Mono'; font-weight:600; font-size:46px; color:#fff; line-height:1;}
+.streak-num{font-family:'IBM Plex Mono'; font-weight:600; font-size:46px; color:#fff; line-height:1; text-shadow:0 2px 10px rgba(0,0,0,0.45);}
 .streak-label{color:#fff; opacity:0.85; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; margin-top:4px; font-weight:600;}
 
 /* buttons */
@@ -123,7 +135,9 @@ h1,h2,h3,.display{
   border:none; border-radius:8px; padding:13px 16px; font-family:'IBM Plex Sans'; font-weight:700;
   font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
   letter-spacing:0.04em; text-transform:uppercase;
+  transition:transform .1s ease, filter .1s ease, opacity .1s ease;
 }
+.btn:active{transform:scale(0.97); filter:brightness(0.88);}
 .btn-primary{background:var(--accent); color:#fff;}
 .btn-secondary{background:var(--bg-card-2); color:var(--text); border:1px solid var(--line);}
 .btn-danger{background:transparent; color:var(--danger); border:1px solid rgba(255,77,61,0.4);}
@@ -134,7 +148,9 @@ h1,h2,h3,.display{
   flex-shrink:0; padding:9px 16px; border-radius:7px; font-size:12.5px; font-weight:700;
   background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim); cursor:pointer;
   font-family:'IBM Plex Sans'; text-transform:uppercase; letter-spacing:0.03em;
+  transition:transform .1s ease, background .15s ease, color .15s ease, border-color .15s ease;
 }
+.pill:active{transform:scale(0.95);}
 .pill.active{background:var(--accent); color:#fff; border-color:var(--accent);}
 
 /* exercise card */
@@ -175,8 +191,13 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 .tab-item{
   flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px;
   color:var(--text-dim); background:none; border:none; font-family:'IBM Plex Sans'; cursor:pointer;
+  position:relative; transition:color .15s ease;
 }
 .tab-item.active{color:var(--accent);}
+.tab-item.active::before{
+  content:''; position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+  width:16px; height:3px; border-radius:0 0 3px 3px; background:var(--accent);
+}
 .tab-icon{font-size:19px; line-height:1;}
 .tab-label{font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; font-weight:700;}
 
@@ -271,7 +292,11 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 .focus-main-btn{max-width:340px; padding:16px; font-size:15px;}
 .focus-secondary-btn{max-width:340px; margin-top:10px;}
 .focus-rest-label{font-size:13px; color:#8f8f8f; text-transform:uppercase; letter-spacing:.06em; margin-top:6px; text-align:center;}
-.focus-countdown{font-size:68px; margin:22px 0; font-weight:600; color:var(--accent);}
+.focus-ring-wrap{position:relative; width:220px; height:220px; display:flex; align-items:center; justify-content:center; margin:18px 0 22px;}
+.focus-ring{position:absolute; inset:0; transform:rotate(-90deg);}
+.focus-ring-bg{fill:none; stroke:rgba(255,255,255,0.08); stroke-width:10;}
+.focus-ring-fg{fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 1s linear;}
+.focus-countdown{font-size:48px; font-weight:600; color:#fff; position:relative; z-index:1;}
 .focus-rest-btn{max-width:280px;}
 ::-webkit-scrollbar{display:none;}
 </style>
@@ -322,7 +347,7 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -714,10 +739,14 @@ function render(animDir){
       case 'more': c.innerHTML = renderMore(); break;
     }
   }
-  if(animDir){
-    c.classList.remove('anim-forward','anim-backward');
+  if(animDir || state.searchOpen || state.editorOpen || state.focusOpen || state.cooldownOpen){
+    c.classList.remove('anim-forward','anim-backward','overlay-anim');
     void c.offsetWidth;
-    c.classList.add(animDir==='forward' ? 'anim-forward' : 'anim-backward');
+    if(state.searchOpen || state.editorOpen || state.focusOpen || state.cooldownOpen){
+      c.classList.add('overlay-anim');
+    } else {
+      c.classList.add(animDir==='forward' ? 'anim-forward' : 'anim-backward');
+    }
   }
 }
 
@@ -1055,6 +1084,25 @@ function focusExerciseList(){
   const def = state.data.program[state.focusDay];
   return def.exerciseIds.map(id=>({id, name:(state.data.exercises[id]||{name:id}).name}));
 }
+let wakeLockSentinel = null;
+async function acquireWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+      wakeLockSentinel.addEventListener('release', ()=>{ wakeLockSentinel = null; });
+    }
+  }catch(e){ /* not supported, denied, or backgrounded — fail silently */ }
+}
+async function releaseWakeLock(){
+  try{
+    if(wakeLockSentinel){ await wakeLockSentinel.release(); wakeLockSentinel = null; }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && state.focusOpen && !wakeLockSentinel){
+    acquireWakeLock();
+  }
+});
 function startFocusMode(){
   const day = state.workoutDay;
   ensureDraft(day);
@@ -1064,17 +1112,20 @@ function startFocusMode(){
   state.focusSetIdx = 0;
   state.focusPhase = 'set';
   resetFocusStopwatch();
+  acquireWakeLock();
   render();
 }
 function exitFocusMode(){
   stopFocusStopwatch();
   stopFocusRest();
+  releaseWakeLock();
   state.focusOpen = false;
   render();
 }
 function exitFocusModeSilently(){
   stopFocusStopwatch();
   stopFocusRest();
+  releaseWakeLock();
   state.focusOpen = false;
 }
 function renderFocus(){
@@ -1118,6 +1169,9 @@ function renderFocusRest(){
   const isExerciseRest = state.focusPhase==='rest-exercise';
   const list = focusExerciseList();
   const nextEx = isExerciseRest ? list[state.focusExIdx+1] : list[state.focusExIdx];
+  const circumference = 2*Math.PI*90;
+  const pct = state.focusRestTotal>0 ? Math.min(1, Math.max(0,state.focusRestRemaining)/state.focusRestTotal) : 0;
+  const offset = circumference*(1-pct);
   return `
     <div class="focus-screen focus-rest">
       <div class="focus-top">
@@ -1126,7 +1180,13 @@ function renderFocusRest(){
       </div>
       <div class="focus-rest-label">${isExerciseRest ? 'Nice work. Recover before:' : 'Rest up for your next set of:'}</div>
       <div class="focus-ex-name">${nextEx ? nextEx.name : ''}</div>
-      <div class="focus-countdown mono" id="focusRestDisplay">${formatMMSS(state.focusRestRemaining)}</div>
+      <div class="focus-ring-wrap">
+        <svg class="focus-ring" viewBox="0 0 200 200">
+          <circle class="focus-ring-bg" cx="100" cy="100" r="90"></circle>
+          <circle class="focus-ring-fg" id="focusRingFg" cx="100" cy="100" r="90" style="stroke-dasharray:${circumference.toFixed(1)}; stroke-dashoffset:${offset.toFixed(1)};"></circle>
+        </svg>
+        <div class="focus-countdown mono" id="focusRestDisplay">${formatMMSS(state.focusRestRemaining)}</div>
+      </div>
       <div class="timer-presets" style="max-width:220px; margin:0 auto 18px;">
         <div class="pill" onclick="adjustFocusRest(-15)">-15s</div>
         <div class="pill" onclick="adjustFocusRest(15)">+15s</div>
@@ -1207,6 +1267,12 @@ function stopFocusRest(){
 function updateFocusRestDisplay(){
   const el = document.getElementById('focusRestDisplay');
   if(el) el.textContent = formatMMSS(state.focusRestRemaining);
+  const ring = document.getElementById('focusRingFg');
+  if(ring){
+    const circumference = 2*Math.PI*90;
+    const pct = state.focusRestTotal>0 ? Math.min(1, Math.max(0,state.focusRestRemaining)/state.focusRestTotal) : 0;
+    ring.style.strokeDashoffset = (circumference*(1-pct)).toFixed(1);
+  }
 }
 function adjustFocusRest(delta){
   state.focusRestRemaining = Math.max(0, state.focusRestRemaining + delta);

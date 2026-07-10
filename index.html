@@ -162,6 +162,7 @@ h1,h2,h3,.display{
   background:var(--accent); color:#fff; font-size:10px; font-weight:700; padding:3px 8px;
   border-radius:5px; letter-spacing:0.05em; white-space:nowrap; text-transform:uppercase;
 }
+.side-label{font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:10px 0 4px;}
 .set-row{display:grid; grid-template-columns:28px 1fr 1fr; gap:8px; align-items:center; margin-bottom:6px;}
 .set-idx{font-family:'IBM Plex Mono'; font-size:12px; color:var(--text-dim); text-align:center;}
 .set-input{
@@ -275,29 +276,14 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 .heat-cell{width:10px; height:10px; border-radius:2px; background:var(--bg-card-2);}
 .heat-cell.active{background:var(--accent);}
 .editor-row-btn{width:32px; height:32px; font-size:12px; flex-shrink:0;}
-.focus-screen{
-  position:fixed; inset:0; z-index:150; background:#000; color:#fff;
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-  padding:calc(20px + var(--safe-top)) 20px calc(20px + var(--safe-bottom));
-  overflow-y:auto;
-}
-.focus-screen.focus-rest{justify-content:center;}
-.focus-top{width:100%; max-width:420px; display:flex; justify-content:space-between; align-items:center; margin-bottom:26px;}
-.focus-progress{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#8f8f8f; font-weight:700;}
-.focus-ex-name{font-family:'Oswald'; font-size:26px; text-transform:uppercase; font-weight:700; text-align:center; max-width:420px; line-height:1.2;}
-.focus-set-label{font-size:13px; color:#8f8f8f; text-transform:uppercase; letter-spacing:.08em; margin-top:8px; font-weight:700;}
-.focus-hint{font-size:12px; color:#8f8f8f; margin-top:6px;}
-.focus-stopwatch{font-size:54px; margin:26px 0; font-weight:600;}
-.focus-inputs{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:340px; margin-bottom:22px;}
-.focus-main-btn{max-width:340px; padding:16px; font-size:15px;}
-.focus-secondary-btn{max-width:340px; margin-top:10px;}
-.focus-rest-label{font-size:13px; color:#8f8f8f; text-transform:uppercase; letter-spacing:.06em; margin-top:6px; text-align:center;}
-.focus-ring-wrap{position:relative; width:220px; height:220px; display:flex; align-items:center; justify-content:center; margin:18px 0 22px;}
-.focus-ring{position:absolute; inset:0; transform:rotate(-90deg);}
-.focus-ring-bg{fill:none; stroke:rgba(255,255,255,0.08); stroke-width:10;}
-.focus-ring-fg{fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 1s linear;}
-.focus-countdown{font-size:48px; font-weight:600; color:#fff; position:relative; z-index:1;}
-.focus-rest-btn{max-width:280px;}
+.uni-check-label{display:flex; align-items:center; gap:3px; font-size:9px; color:var(--text-dim); flex-shrink:0; text-transform:uppercase; font-weight:700;}
+.uni-check-label input{width:14px; height:14px;}
+.meso-table-wrap{overflow-x:auto; margin:0 -4px;}
+.meso-table{border-collapse:collapse; width:100%; font-size:12px;}
+.meso-table th, .meso-table td{padding:5px 6px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap;}
+.meso-table th{color:var(--text-dim); text-transform:uppercase; font-size:9px; letter-spacing:.05em; font-weight:700;}
+.meso-table td:first-child{position:sticky; left:0; background:var(--bg-card); min-width:140px; white-space:normal; font-size:11.5px;}
+.meso-table input{width:52px; padding:6px 4px; font-size:12px;}
 ::-webkit-scrollbar{display:none;}
 </style>
 </head>
@@ -347,7 +333,7 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -386,13 +372,13 @@ const DEFAULT_EXERCISES = {
   push_press:{name:'Dumbbell Push Press (Serve Drive)'}, lat_raise:{name:'Dumbbell Lateral Raise'},
   front_raise:{name:'Dumbbell Front Raise'}, tri_ext:{name:'Dumbbell Overhead Tricep Extension'},
   goblet_squat:{name:'Dumbbell Goblet Squat'}, walk_lunge:{name:'Dumbbell Walking Lunge'},
-  lat_lunge:{name:'Dumbbell Lateral Lunge'}, rdl:{name:'Dumbbell Romanian Deadlift'},
+  lat_lunge:{name:'Dumbbell Lateral Lunge', unilateral:true}, rdl:{name:'Dumbbell Romanian Deadlift'},
   step_up:{name:'Dumbbell Step-Up'}, calf_raise:{name:'Dumbbell Calf Raise'},
-  bent_row:{name:'Dumbbell Bent-Over Row'}, single_row:{name:'Dumbbell Single-Arm Row'},
+  bent_row:{name:'Dumbbell Bent-Over Row'}, single_row:{name:'Dumbbell Single-Arm Row', unilateral:true},
   rev_fly:{name:'Dumbbell Reverse Fly'}, woodchop:{name:'Dumbbell Woodchopper'},
   russian_twist:{name:'Dumbbell Russian Twist'}, bicep_curl:{name:'Dumbbell Bicep Curl'},
-  thruster:{name:'Dumbbell Thruster'}, sl_rdl:{name:'Dumbbell Single-Leg RDL'},
-  renegade_row:{name:'Dumbbell Renegade Row'}, farmers_carry:{name:"Dumbbell Farmer's Carry"},
+  thruster:{name:'Dumbbell Thruster'}, sl_rdl:{name:'Dumbbell Single-Leg RDL', unilateral:true},
+  renegade_row:{name:'Dumbbell Renegade Row', unilateral:true}, farmers_carry:{name:"Dumbbell Farmer's Carry"},
   arnold_press:{name:'Dumbbell Arnold Press'}, wrist_curl:{name:'Dumbbell Wrist Curl (Elbow Guard)'},
 };
 
@@ -433,19 +419,20 @@ function allExercises(){
     const def = state.data.program[day];
     for(const id of def.exerciseIds){
       const reg = state.data.exercises[id] || {name:id};
-      out.push({id, name:reg.name, day});
+      out.push({id, name:reg.name, day, unilateral:!!reg.unilateral});
     }
   }
   return out;
 }
 function exerciseById(id){ return allExercises().find(e=>e.id===id); }
+function isUnilateralById(id){ return !!(state.data.exercises[id] && state.data.exercises[id].unilateral); }
 function archivedExercises(){
   const activeIds = new Set(allExercises().map(e=>e.id));
   const out = [];
   for(const id in state.data.exercises){
     if(activeIds.has(id)) continue;
     if(exerciseHistory(id).length){
-      out.push({id, name:state.data.exercises[id].name, day:null, archived:true});
+      out.push({id, name:state.data.exercises[id].name, day:null, archived:true, unilateral:!!state.data.exercises[id].unilateral});
     }
   }
   return out;
@@ -456,15 +443,14 @@ function defaultData(){
     workouts: [],
     bodyweight: [],
     vacations: [],
+    savedPrograms: [],
+    mesocycle: null,
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
     settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2 },
     meta: { createdAt: new Date().toISOString() }
   };
 }
-
-const REST_BETWEEN_SETS = 60;
-const REST_BETWEEN_EXERCISES = 100;
 
 let state = {
   data: null,
@@ -475,8 +461,13 @@ let state = {
   searchOpen: false,
   searchQuery: '',
   editorOpen: false,
+  mesoEditorOpen: false,
+  mesoDraft: null,
+  summaryOpen: false,
+  summaryData: null,
   cooldownOpen: false,
   cooldownDay: 1,
+  stretchTimers: {},
   chartMode: 'compact',
   expandedIds: new Set(),
   quickAddExId: null,
@@ -485,17 +476,6 @@ let state = {
   calMonth: new Date().getMonth(),
   calSelected: null,
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
-  focusOpen: false,
-  focusDay: 1,
-  focusExIdx: 0,
-  focusSetIdx: 0,
-  focusPhase: 'set',
-  focusStopwatchSec: 0,
-  focusStopwatchRunning: false,
-  focusStopwatchInterval: null,
-  focusRestTotal: 60,
-  focusRestRemaining: 60,
-  focusRestInterval: null,
   loaded:false,
 };
 let lastSnapshot = null;
@@ -529,6 +509,8 @@ async function loadData(){
         program: parsed.program || d.program,
         exercises: parsed.exercises || d.exercises,
         vacations: parsed.vacations || [],
+        savedPrograms: parsed.savedPrograms || [],
+        mesocycle: parsed.mesocycle || null,
         settings: {...d.settings, ...(parsed.settings||{})}
       };
     } else {
@@ -563,6 +545,11 @@ function prettyDate(str){
   return d.toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'});
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function formatMMSS(sec){
+  const s = Math.max(0, sec);
+  const m = Math.floor(s/60), r = s%60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
 let _toastUndoFn = null;
 function showToast(msg, ms=2600, undoFn=null){
   const t = document.getElementById('toast');
@@ -584,9 +571,11 @@ function exerciseHistory(exId){
   const rows = [];
   for(const w of state.data.workouts){
     const ex = w.exercises && w.exercises[exId];
-    if(!ex || !ex.sets || !ex.sets.length) continue;
+    if(!ex) continue;
+    const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+    if(!allSets.length) continue;
     let maxW = 0, repsAtMax = 0, volume = 0;
-    for(const s of ex.sets){
+    for(const s of allSets){
       const wt = Number(s.weight)||0, r = Number(s.reps)||0;
       volume += wt*r;
       if(wt>0 && wt >= maxW){ maxW = wt; repsAtMax = r; }
@@ -683,7 +672,9 @@ function monthlyTotals(year, month){
   let volume = 0;
   for(const w of wos){
     for(const exId in w.exercises){
-      for(const s of w.exercises[exId].sets){
+      const ex = w.exercises[exId];
+      const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+      for(const s of allSets){
         volume += (Number(s.weight)||0) * (Number(s.reps)||0);
       }
     }
@@ -707,17 +698,37 @@ function nextWorkoutDay(){
   const last = sorted[0].day;
   return last>=4 ? 1 : last+1;
 }
+function currentMesoWeek(){
+  const m = state.data.mesocycle;
+  if(!m) return null;
+  const start = new Date(m.startDate+'T00:00:00');
+  const today = new Date(todayStr()+'T00:00:00');
+  const diffDays = Math.floor((today-start)/86400000);
+  if(diffDays<0) return null;
+  const week = Math.floor(diffDays/7)+1;
+  if(week > m.weeks) return null;
+  return week;
+}
+function mesoTargetFor(exId){
+  const m = state.data.mesocycle;
+  const wk = currentMesoWeek();
+  if(!m || !wk || !m.targets[exId]) return null;
+  const val = m.targets[exId][wk-1];
+  return val>0 ? val : null;
+}
 
 /* ---------------- rendering shell ---------------- */
 function switchTab(tab){
   const fromIdx = TAB_ORDER.indexOf(state.tab);
   const toIdx = TAB_ORDER.indexOf(tab);
   const dir = toIdx>fromIdx ? 'forward' : (toIdx<fromIdx ? 'backward' : null);
+  clearAllStretchTimers();
   state.tab = tab;
   state.searchOpen = false;
   state.editorOpen = false;
+  state.mesoEditorOpen = false;
+  state.summaryOpen = false;
   state.cooldownOpen = false;
-  state.focusOpen = false;
   render(dir);
   window.scrollTo(0,0);
 }
@@ -726,9 +737,11 @@ function render(animDir){
     el.classList.toggle('active', el.dataset.tab===state.tab);
   });
   const c = document.getElementById('content');
+  const isOverlay = state.searchOpen || state.editorOpen || state.mesoEditorOpen || state.summaryOpen || state.cooldownOpen;
   if(state.searchOpen){ c.innerHTML = renderSearch(); }
   else if(state.editorOpen){ c.innerHTML = renderEditor(); }
-  else if(state.focusOpen){ c.innerHTML = renderFocus(); }
+  else if(state.mesoEditorOpen){ c.innerHTML = renderMesoEditor(); }
+  else if(state.summaryOpen){ c.innerHTML = renderSummary(); }
   else if(state.cooldownOpen){ c.innerHTML = renderCooldown(); }
   else {
     switch(state.tab){
@@ -739,10 +752,10 @@ function render(animDir){
       case 'more': c.innerHTML = renderMore(); break;
     }
   }
-  if(animDir || state.searchOpen || state.editorOpen || state.focusOpen || state.cooldownOpen){
+  if(animDir || isOverlay){
     c.classList.remove('anim-forward','anim-backward','overlay-anim');
     void c.offsetWidth;
-    if(state.searchOpen || state.editorOpen || state.focusOpen || state.cooldownOpen){
+    if(isOverlay){
       c.classList.add('overlay-anim');
     } else {
       c.classList.add(animDir==='forward' ? 'anim-forward' : 'anim-backward');
@@ -772,6 +785,7 @@ function renderDashboard(){
       <div class="stat-box"><div class="stat-num">${pbCount}</div><div class="stat-label">Lifts Tracked</div></div>
     </div>
     ${renderRecapCard()}
+    ${renderMesoCard()}
     <div class="card">
       <div class="card-title">Last 12 Weeks</div>
       ${renderHeatmap()}
@@ -836,7 +850,9 @@ function last7DaysStats(){
   for(const w of wos){
     prCount += (w.prExIds||[]).length;
     for(const exId in w.exercises){
-      for(const s of w.exercises[exId].sets){ volume += (Number(s.weight)||0)*(Number(s.reps)||0); }
+      const ex = w.exercises[exId];
+      const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+      for(const s of allSets){ volume += (Number(s.weight)||0)*(Number(s.reps)||0); }
     }
   }
   return {count:wos.length, volume, prCount};
@@ -867,6 +883,21 @@ function renderRecapCard(){
         This month: <strong>${mt.count}</strong> workout${mt.count===1?'':'s'}, <strong>${mt.volume.toLocaleString()} lb</strong> lifted.
         ${gain ? `<br>Biggest gain: <strong>${gain.name}</strong> ${gain.gain>=0?'+':''}${gain.gain.toFixed(1)}%.` : ''}
       </div>
+    </div>
+  `;
+}
+function renderMesoCard(){
+  const m = state.data.mesocycle;
+  if(!m) return '';
+  const wk = currentMesoWeek();
+  if(!wk){
+    return `<div class="card"><div class="card-title">Mesocycle</div><div class="list-row-sub">Your planned block has ended. Head to More to plan a new one.</div></div>`;
+  }
+  return `
+    <div class="card">
+      <div class="card-title">Mesocycle</div>
+      <div style="font-size:14px; font-weight:600;">Week ${wk} of ${m.weeks}</div>
+      <div class="list-row-sub" style="margin-top:4px;">Started ${prettyDate(m.startDate)}</div>
     </div>
   `;
 }
@@ -901,11 +932,18 @@ function goToWorkoutDay(d){
 }
 
 /* ---------------- Workout ---------------- */
+function freshSets(n){
+  return Array.from({length:n}, ()=>({weight:'', reps:''}));
+}
 function ensureDraft(day){
   const def = state.data.program[day];
   for(const id of def.exerciseIds){
     if(!state.draftSets[id]){
-      state.draftSets[id] = [{weight:'',reps:''},{weight:'',reps:''},{weight:'',reps:''}];
+      if(isUnilateralById(id)){
+        state.draftSets[id] = { left: freshSets(3), right: freshSets(3) };
+      } else {
+        state.draftSets[id] = freshSets(3);
+      }
     }
   }
 }
@@ -927,7 +965,6 @@ function renderWorkout(){
         <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="repeatLastWorkout()">↺ Repeat Last</button>
       </div>
     </div>
-    <button class="btn btn-primary btn-block" style="margin-bottom:12px; padding:14px; font-size:14px;" onclick="startFocusMode()">▶ Start Focus Mode</button>
     ${exList.map(ex=>renderExerciseCard(ex)).join('')}
     <div class="card">
       <div class="card-title">Workout Notes</div>
@@ -950,29 +987,51 @@ function repeatLastWorkout(){
   ensureDraft(day);
   for(const exId in past.exercises){
     if(!state.draftSets[exId]) continue;
-    state.draftSets[exId] = past.exercises[exId].sets.map(s=>({weight:String(s.weight||''), reps:String(s.reps||'')}));
+    const pastEx = past.exercises[exId];
+    const isUni = isUnilateralById(exId);
+    if(isUni && pastEx.unilateral){
+      state.draftSets[exId].left = (pastEx.leftSets||[]).map(s=>({weight:String(s.weight||''), reps:String(s.reps||'')}));
+      state.draftSets[exId].right = (pastEx.rightSets||[]).map(s=>({weight:String(s.weight||''), reps:String(s.reps||'')}));
+    } else if(!isUni && !pastEx.unilateral){
+      state.draftSets[exId] = (pastEx.sets||[]).map(s=>({weight:String(s.weight||''), reps:String(s.reps||'')}));
+    }
   }
   state.draftNotes = past.notes || '';
   showToast('Prefilled from last session');
   render();
 }
 function renderExerciseCard(ex){
+  const isUni = isUnilateralById(ex.id);
   const prev = previousWeightFor(ex.id);
   const pb = personalBest(ex.id);
   const fw = fourWeeksAgoEntry(ex.id);
   const sugg = suggestedWeight(ex.id);
+  const mesoTarget = mesoTargetFor(ex.id);
+  const header = `
+    <div class="ex-head">
+      <div>
+        <div class="ex-name">${ex.name}${isUni?' <span class="tag">L/R</span>':''}</div>
+        <div class="ex-prev">${prev ? `Last: ${prev.maxWeight} lb × ${prev.reps} <span style="opacity:.6;">(${prettyDate(prev.date)})</span>` : 'No history yet'}</div>
+        ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${fw.maxWeight} lb × ${fw.reps}</div>` : ''}
+        ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Suggested ${sugg} lb — tap to apply</span></div>` : ''}
+        ${mesoTarget ? `<div style="margin-top:4px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${mesoTarget})">Week ${currentMesoWeek()} Target: ${mesoTarget} lb</span></div>` : ''}
+      </div>
+      ${pb ? `<span class="tag">PB ${pb.maxWeight} lb</span>` : ''}
+    </div>
+  `;
+  if(isUni){
+    return `
+      <div class="ex-card">
+        ${header}
+        ${renderSideSets(ex.id, 'left', 'Left')}
+        ${renderSideSets(ex.id, 'right', 'Right')}
+      </div>
+    `;
+  }
   const sets = state.draftSets[ex.id];
   return `
     <div class="ex-card">
-      <div class="ex-head">
-        <div>
-          <div class="ex-name">${ex.name}</div>
-          <div class="ex-prev">${prev ? `Last: ${prev.maxWeight} lb × ${prev.reps} <span style="opacity:.6;">(${prettyDate(prev.date)})</span>` : 'No history yet'}</div>
-          ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${fw.maxWeight} lb × ${fw.reps}</div>` : ''}
-          ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Suggested ${sugg} lb — tap to apply</span></div>` : ''}
-        </div>
-        ${pb ? `<span class="tag">PB ${pb.maxWeight} lb</span>` : ''}
-      </div>
+      ${header}
       <div class="set-row" style="margin-bottom:2px;">
         <div></div>
         <div class="set-input-label">Weight (lb)</div>
@@ -991,21 +1050,57 @@ function renderExerciseCard(ex){
     </div>
   `;
 }
+function renderSideSets(exId, side, label){
+  const sets = state.draftSets[exId][side];
+  return `
+    <div>
+      <div class="side-label">${label}</div>
+      <div class="set-row" style="margin-bottom:2px;">
+        <div></div>
+        <div class="set-input-label">Weight (lb)</div>
+        <div class="set-input-label">Reps</div>
+      </div>
+      ${sets.map((s,i)=>`
+        <div class="set-row">
+          <div class="set-idx">${i+1}</div>
+          <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSideSet('${exId}','${side}',${i},'weight',this.value)">
+          <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${s.reps}" oninput="updateSideSet('${exId}','${side}',${i},'reps',this.value)">
+        </div>
+      `).join('')}
+      <div style="text-align:right; margin-top:4px;">
+        <span class="btn btn-secondary btn-sm" onclick="addSideSet('${exId}','${side}')">+ Add ${label} Set</span>
+      </div>
+    </div>
+  `;
+}
 function updateSet(exId, idx, field, val){
   state.draftSets[exId][idx][field] = val;
 }
-function applySuggestedWeight(exId, weight){
-  ensureDraft(state.workoutDay);
-  const set0 = state.draftSets[exId][0];
-  set0.weight = String(weight);
-  if(!set0.reps){
-    const prev = previousWeightFor(exId);
-    if(prev) set0.reps = String(prev.reps);
-  }
-  render();
+function updateSideSet(exId, side, idx, field, val){
+  state.draftSets[exId][side][idx][field] = val;
 }
 function addSet(exId){
   state.draftSets[exId].push({weight:'',reps:''});
+  render();
+}
+function addSideSet(exId, side){
+  state.draftSets[exId][side].push({weight:'',reps:''});
+  render();
+}
+function applySuggestedWeight(exId, weight){
+  ensureDraft(state.workoutDay);
+  const prev = previousWeightFor(exId);
+  if(isUnilateralById(exId)){
+    ['left','right'].forEach(side=>{
+      const set0 = state.draftSets[exId][side][0];
+      set0.weight = String(weight);
+      if(!set0.reps && prev) set0.reps = String(prev.reps);
+    });
+  } else {
+    const set0 = state.draftSets[exId][0];
+    set0.weight = String(weight);
+    if(!set0.reps && prev) set0.reps = String(prev.reps);
+  }
   render();
 }
 function completeWorkout(){
@@ -1013,10 +1108,19 @@ function completeWorkout(){
   const exercisesOut = {};
   let anyLogged = false;
   for(const exId in state.draftSets){
-    const sets = state.draftSets[exId]
-      .map(s=>({weight:Number(s.weight)||0, reps:Number(s.reps)||0}))
-      .filter(s=>s.weight>0 || s.reps>0);
-    if(sets.length){ exercisesOut[exId] = {sets}; anyLogged = true; }
+    if(isUnilateralById(exId)){
+      const leftSets = (state.draftSets[exId].left||[]).map(s=>({weight:Number(s.weight)||0, reps:Number(s.reps)||0})).filter(s=>s.weight>0||s.reps>0);
+      const rightSets = (state.draftSets[exId].right||[]).map(s=>({weight:Number(s.weight)||0, reps:Number(s.reps)||0})).filter(s=>s.weight>0||s.reps>0);
+      if(leftSets.length || rightSets.length){
+        exercisesOut[exId] = { unilateral:true, leftSets, rightSets };
+        anyLogged = true;
+      }
+    } else {
+      const sets = state.draftSets[exId]
+        .map(s=>({weight:Number(s.weight)||0, reps:Number(s.reps)||0}))
+        .filter(s=>s.weight>0 || s.reps>0);
+      if(sets.length){ exercisesOut[exId] = {sets}; anyLogged = true; }
+    }
   }
   if(!anyLogged){
     showToast('Log at least one set before completing');
@@ -1025,9 +1129,14 @@ function completeWorkout(){
   snapshot();
   const date = todayStr();
   const prExIds = [];
+  let totalSets = 0, totalVolume = 0;
   for(const exId in exercisesOut){
+    const ex = exercisesOut[exId];
+    const allSets = ex.unilateral ? [...ex.leftSets, ...ex.rightSets] : ex.sets;
+    totalSets += allSets.length;
+    for(const s of allSets){ totalVolume += s.weight*s.reps; }
     const priorBest = personalBest(exId);
-    const maxThis = Math.max(...exercisesOut[exId].sets.map(s=>s.weight));
+    const maxThis = allSets.length ? Math.max(...allSets.map(s=>s.weight)) : 0;
     if(!priorBest || maxThis > priorBest.maxWeight) prExIds.push(exId);
   }
   const workout = { id:uid(), date, day, exercises:exercisesOut, notes: state.draftNotes||'', prExIds };
@@ -1040,9 +1149,46 @@ function completeWorkout(){
   state.draftNotes = '';
   const msg = prExIds.length ? `🏆 Workout saved — ${prExIds.length} new PR${prExIds.length>1?'s':''}!` : '✅ Workout saved';
   showToast(msg, 4500, undoLast);
-  state.cooldownOpen = true;
+  state.summaryData = {
+    day, totalSets, totalVolume,
+    exerciseCount: Object.keys(exercisesOut).length,
+    prCount: prExIds.length,
+  };
+  state.summaryOpen = true;
   state.cooldownDay = day;
   render();
+}
+
+/* ---------------- Post-Workout Summary ---------------- */
+function renderSummary(){
+  const s = state.summaryData;
+  if(!s) return '';
+  return `
+    <div class="card quote-card">
+      <div class="quote-text">Workout Complete.</div>
+      <div class="quote-attr">Day ${s.day} — ${state.data.program[s.day].name}</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">${s.totalVolume.toLocaleString()}</div><div class="stat-label">Volume (lb)</div></div>
+      <div class="stat-box"><div class="stat-num">${s.totalSets}</div><div class="stat-label">Sets Logged</div></div>
+      <div class="stat-box"><div class="stat-num">${s.exerciseCount}</div><div class="stat-label">Exercises</div></div>
+      <div class="stat-box"><div class="stat-num">${s.prCount}</div><div class="stat-label">PRs Hit</div></div>
+    </div>
+    <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="continueToStretches()">Continue To Cool Down →</button>
+    <div style="height:10px;"></div>
+  `;
+}
+function continueToStretches(){
+  state.summaryOpen = false;
+  clearAllStretchTimers();
+  state.cooldownOpen = true;
+  render();
+}
+
+/* ---------------- Cool Down / Stretch Timers ---------------- */
+function parseStretchSeconds(durationStr){
+  const m = durationStr.match(/(\d+)/);
+  return m ? parseInt(m[1],10) : 30;
 }
 function renderCooldown(){
   const day = state.cooldownDay;
@@ -1055,244 +1201,68 @@ function renderCooldown(){
     </div>
     <div class="card">
       <div class="card-title">Cool Down Stretches</div>
-      ${list.map(s=>`
-        <div class="list-row" style="align-items:flex-start;">
-          <div>
-            <div class="list-row-title">${s.name}</div>
-            <div class="list-row-sub" style="margin-top:3px; line-height:1.4;">${s.note}</div>
-          </div>
-          <div class="tag" style="flex-shrink:0; margin-left:10px; white-space:nowrap;">${s.duration}</div>
-        </div>
-      `).join('')}
+      ${list.map((s,i)=>renderStretchRow(s,i)).join('')}
     </div>
     <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="closeCooldown()">Done — Go To Dashboard</button>
     <div style="height:10px;"></div>
   `;
 }
+function renderStretchRow(s, idx){
+  const total = parseStretchSeconds(s.duration);
+  const t = state.stretchTimers[idx] || {remaining: total, total, running:false};
+  return `
+    <div class="list-row" style="align-items:flex-start; flex-wrap:wrap; gap:8px;">
+      <div style="flex:1; min-width:180px;">
+        <div class="list-row-title">${s.name}</div>
+        <div class="list-row-sub" style="margin-top:3px; line-height:1.4;">${s.note}</div>
+        <div class="list-row-sub" style="margin-top:2px; opacity:.7;">${s.duration}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="mono" id="stretchTimerDisplay-${idx}" style="font-size:18px; min-width:50px; text-align:right;">${formatMMSS(t.remaining)}</div>
+        <button class="btn btn-secondary btn-sm" id="stretchTimerBtn-${idx}" onclick="toggleStretchTimer(${idx}, ${total})">${t.running?'Pause':'Start'}</button>
+      </div>
+    </div>
+  `;
+}
+function toggleStretchTimer(idx, total){
+  if(!state.stretchTimers[idx]) state.stretchTimers[idx] = {remaining: total, total, running:false, intervalId:null};
+  const t = state.stretchTimers[idx];
+  if(t.running){
+    clearInterval(t.intervalId);
+    t.running = false;
+  } else {
+    t.running = true;
+    t.intervalId = setInterval(()=>{
+      t.remaining--;
+      updateStretchTimerDisplay(idx);
+      if(t.remaining<=0){
+        clearInterval(t.intervalId);
+        t.running = false;
+        t.remaining = 0;
+        updateStretchTimerDisplay(idx);
+        const btn = document.getElementById('stretchTimerBtn-'+idx);
+        if(btn) btn.textContent = 'Start';
+        showToast('Stretch complete');
+      }
+    }, 1000);
+  }
+  const btn = document.getElementById('stretchTimerBtn-'+idx);
+  if(btn) btn.textContent = t.running ? 'Pause' : 'Start';
+}
+function updateStretchTimerDisplay(idx){
+  const el = document.getElementById('stretchTimerDisplay-'+idx);
+  if(el) el.textContent = formatMMSS(state.stretchTimers[idx].remaining);
+}
+function clearAllStretchTimers(){
+  for(const idx in state.stretchTimers){
+    if(state.stretchTimers[idx].intervalId) clearInterval(state.stretchTimers[idx].intervalId);
+  }
+  state.stretchTimers = {};
+}
 function closeCooldown(){
+  clearAllStretchTimers();
   state.cooldownOpen = false;
   switchTab('dashboard');
-}
-
-/* ---------------- Focus Mode ---------------- */
-function formatMMSS(sec){
-  const s = Math.max(0, sec);
-  const m = Math.floor(s/60), r = s%60;
-  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
-}
-function focusExerciseList(){
-  const def = state.data.program[state.focusDay];
-  return def.exerciseIds.map(id=>({id, name:(state.data.exercises[id]||{name:id}).name}));
-}
-let wakeLockSentinel = null;
-async function acquireWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLockSentinel = await navigator.wakeLock.request('screen');
-      wakeLockSentinel.addEventListener('release', ()=>{ wakeLockSentinel = null; });
-    }
-  }catch(e){ /* not supported, denied, or backgrounded — fail silently */ }
-}
-async function releaseWakeLock(){
-  try{
-    if(wakeLockSentinel){ await wakeLockSentinel.release(); wakeLockSentinel = null; }
-  }catch(e){}
-}
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && state.focusOpen && !wakeLockSentinel){
-    acquireWakeLock();
-  }
-});
-function startFocusMode(){
-  const day = state.workoutDay;
-  ensureDraft(day);
-  state.focusOpen = true;
-  state.focusDay = day;
-  state.focusExIdx = 0;
-  state.focusSetIdx = 0;
-  state.focusPhase = 'set';
-  resetFocusStopwatch();
-  acquireWakeLock();
-  render();
-}
-function exitFocusMode(){
-  stopFocusStopwatch();
-  stopFocusRest();
-  releaseWakeLock();
-  state.focusOpen = false;
-  render();
-}
-function exitFocusModeSilently(){
-  stopFocusStopwatch();
-  stopFocusRest();
-  releaseWakeLock();
-  state.focusOpen = false;
-}
-function renderFocus(){
-  return state.focusPhase==='set' ? renderFocusSet() : renderFocusRest();
-}
-function renderFocusSet(){
-  const list = focusExerciseList();
-  const ex = list[state.focusExIdx];
-  ensureDraft(state.focusDay);
-  const totalSets = state.draftSets[ex.id] ? state.draftSets[ex.id].length : 3;
-  const setObj = state.draftSets[ex.id][state.focusSetIdx];
-  const prev = previousWeightFor(ex.id);
-  const sugg = suggestedWeight(ex.id);
-  return `
-    <div class="focus-screen">
-      <div class="focus-top">
-        <button class="icon-btn" onclick="exitFocusMode()">✕</button>
-        <div class="focus-progress">Exercise ${state.focusExIdx+1} / ${list.length}</div>
-      </div>
-      <div class="focus-ex-name">${ex.name}</div>
-      <div class="focus-set-label">Set ${state.focusSetIdx+1} of ${totalSets}</div>
-      ${prev ? `<div class="focus-hint">Last: ${prev.maxWeight} lb × ${prev.reps}</div>` : ''}
-      ${sugg ? `<div class="focus-hint" style="color:var(--accent);">Suggested ${sugg} lb</div>` : ''}
-      <div class="focus-stopwatch mono" id="focusStopwatchDisplay">${formatMMSS(state.focusStopwatchSec)}</div>
-      <div class="focus-inputs">
-        <div>
-          <div class="set-input-label">Weight (lb)</div>
-          <input class="set-input" type="number" inputmode="decimal" id="focusWeightInput" value="${setObj.weight}" oninput="updateFocusSet('weight', this.value)">
-        </div>
-        <div>
-          <div class="set-input-label">Reps</div>
-          <input class="set-input" type="number" inputmode="numeric" id="focusRepsInput" value="${setObj.reps}" oninput="updateFocusSet('reps', this.value)">
-        </div>
-      </div>
-      <button class="btn btn-primary btn-block focus-main-btn" id="focusMainBtn" onclick="focusMainButton()">${state.focusStopwatchRunning ? 'Complete Set' : 'Start Set'}</button>
-      <button class="btn btn-secondary btn-block focus-secondary-btn" onclick="completeFocusSet()">Skip This Set →</button>
-    </div>
-  `;
-}
-function renderFocusRest(){
-  const isExerciseRest = state.focusPhase==='rest-exercise';
-  const list = focusExerciseList();
-  const nextEx = isExerciseRest ? list[state.focusExIdx+1] : list[state.focusExIdx];
-  const circumference = 2*Math.PI*90;
-  const pct = state.focusRestTotal>0 ? Math.min(1, Math.max(0,state.focusRestRemaining)/state.focusRestTotal) : 0;
-  const offset = circumference*(1-pct);
-  return `
-    <div class="focus-screen focus-rest">
-      <div class="focus-top">
-        <button class="icon-btn" onclick="exitFocusMode()">✕</button>
-        <div class="focus-progress">${isExerciseRest ? 'Rest — Next Exercise' : 'Rest — Next Set'}</div>
-      </div>
-      <div class="focus-rest-label">${isExerciseRest ? 'Nice work. Recover before:' : 'Rest up for your next set of:'}</div>
-      <div class="focus-ex-name">${nextEx ? nextEx.name : ''}</div>
-      <div class="focus-ring-wrap">
-        <svg class="focus-ring" viewBox="0 0 200 200">
-          <circle class="focus-ring-bg" cx="100" cy="100" r="90"></circle>
-          <circle class="focus-ring-fg" id="focusRingFg" cx="100" cy="100" r="90" style="stroke-dasharray:${circumference.toFixed(1)}; stroke-dashoffset:${offset.toFixed(1)};"></circle>
-        </svg>
-        <div class="focus-countdown mono" id="focusRestDisplay">${formatMMSS(state.focusRestRemaining)}</div>
-      </div>
-      <div class="timer-presets" style="max-width:220px; margin:0 auto 18px;">
-        <div class="pill" onclick="adjustFocusRest(-15)">-15s</div>
-        <div class="pill" onclick="adjustFocusRest(15)">+15s</div>
-      </div>
-      <button class="btn btn-primary btn-block focus-rest-btn" onclick="skipFocusRest()">Skip Rest</button>
-    </div>
-  `;
-}
-function updateFocusSet(field, val){
-  const list = focusExerciseList();
-  const ex = list[state.focusExIdx];
-  state.draftSets[ex.id][state.focusSetIdx][field] = val;
-}
-function focusMainButton(){
-  if(!state.focusStopwatchRunning) startFocusStopwatch();
-  else completeFocusSet();
-}
-function startFocusStopwatch(){
-  state.focusStopwatchRunning = true;
-  state.focusStopwatchSec = 0;
-  updateFocusStopwatchDisplay();
-  state.focusStopwatchInterval = setInterval(()=>{
-    state.focusStopwatchSec++;
-    updateFocusStopwatchDisplay();
-  }, 1000);
-  const btn = document.getElementById('focusMainBtn');
-  if(btn) btn.textContent = 'Complete Set';
-}
-function stopFocusStopwatch(){
-  if(state.focusStopwatchInterval){ clearInterval(state.focusStopwatchInterval); state.focusStopwatchInterval=null; }
-  state.focusStopwatchRunning = false;
-}
-function updateFocusStopwatchDisplay(){
-  const el = document.getElementById('focusStopwatchDisplay');
-  if(el) el.textContent = formatMMSS(state.focusStopwatchSec);
-}
-function resetFocusStopwatch(){
-  stopFocusStopwatch();
-  state.focusStopwatchSec = 0;
-}
-function completeFocusSet(){
-  stopFocusStopwatch();
-  const list = focusExerciseList();
-  const ex = list[state.focusExIdx];
-  const totalSets = state.draftSets[ex.id].length;
-  const isLastSetOfExercise = state.focusSetIdx >= totalSets-1;
-  const isLastExercise = state.focusExIdx >= list.length-1;
-  if(isLastSetOfExercise && isLastExercise){
-    exitFocusModeSilently();
-    completeWorkout();
-    render();
-    return;
-  }
-  if(isLastSetOfExercise){
-    state.focusPhase = 'rest-exercise';
-    beginFocusRest(REST_BETWEEN_EXERCISES);
-  } else {
-    state.focusPhase = 'rest-set';
-    beginFocusRest(REST_BETWEEN_SETS);
-  }
-  render();
-}
-function beginFocusRest(seconds){
-  state.focusRestTotal = seconds;
-  state.focusRestRemaining = seconds;
-  stopFocusRest();
-  state.focusRestInterval = setInterval(()=>{
-    state.focusRestRemaining--;
-    updateFocusRestDisplay();
-    if(state.focusRestRemaining<=0){
-      advanceAfterRest();
-    }
-  }, 1000);
-}
-function stopFocusRest(){
-  if(state.focusRestInterval){ clearInterval(state.focusRestInterval); state.focusRestInterval=null; }
-}
-function updateFocusRestDisplay(){
-  const el = document.getElementById('focusRestDisplay');
-  if(el) el.textContent = formatMMSS(state.focusRestRemaining);
-  const ring = document.getElementById('focusRingFg');
-  if(ring){
-    const circumference = 2*Math.PI*90;
-    const pct = state.focusRestTotal>0 ? Math.min(1, Math.max(0,state.focusRestRemaining)/state.focusRestTotal) : 0;
-    ring.style.strokeDashoffset = (circumference*(1-pct)).toFixed(1);
-  }
-}
-function adjustFocusRest(delta){
-  state.focusRestRemaining = Math.max(0, state.focusRestRemaining + delta);
-  updateFocusRestDisplay();
-}
-function skipFocusRest(){
-  stopFocusRest();
-  advanceAfterRest();
-}
-function advanceAfterRest(){
-  stopFocusRest();
-  if(state.focusPhase==='rest-exercise'){
-    state.focusExIdx++;
-    state.focusSetIdx = 0;
-  } else {
-    state.focusSetIdx++;
-  }
-  state.focusPhase = 'set';
-  resetFocusStopwatch();
-  render();
 }
 
 /* ---------------- Progress ---------------- */
@@ -1328,11 +1298,12 @@ function renderExerciseProgressRow(ex){
   const h = exerciseHistory(ex.id);
   const gain = strengthGainPct(ex.id);
   const isOpen = state.expandedIds.has(ex.id);
+  const isUni = isUnilateralById(ex.id);
   return `
     <div style="border-bottom:1px solid var(--line); padding:10px 0;">
       <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleExpand('${ex.id}')">
         <div>
-          <div class="list-row-title">${ex.name} ${ex.archived?'<span class="tag">Archived</span>':''}</div>
+          <div class="list-row-title">${ex.name} ${isUni?'<span class="tag">L/R</span>':''} ${ex.archived?'<span class="tag">Archived</span>':''}</div>
           <div class="list-row-sub">${h.length} session${h.length===1?'':'s'} logged</div>
         </div>
         <div style="text-align:right;">
@@ -1341,7 +1312,7 @@ function renderExerciseProgressRow(ex){
       </div>
       ${h.length>=2 ? (state.chartMode==='expanded' ? renderLineChart(h.map(r=>({date:r.date, value:r.maxWeight}))) : renderMiniSparkline(h.map(r=>r.maxWeight))) : ''}
       <div style="display:${isOpen?'block':'none'}; margin-top:8px;">
-        ${!ex.archived ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openQuickAdd('${ex.id}')">+ Quick Log</button>
+        ${!ex.archived && !isUni ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openQuickAdd('${ex.id}')">+ Quick Log</button>
         ${state.quickAddExId===ex.id ? renderQuickAddForm(ex.id) : ''}` : ''}
         ${h.length>=2 ? `<div class="list-row-sub" style="margin:10px 0 2px;">Volume Trend</div>${renderMiniSparkline(h.map(r=>r.volume))}` : ''}
         ${h.slice().reverse().map(r=>`
@@ -1483,7 +1454,7 @@ function renderDayDetail(dateStr, byDate){
   return html;
 }
 
-/* ---------------- More: bodyweight, program editor, settings ---------------- */
+/* ---------------- More: bodyweight, programs, mesocycle, settings ---------------- */
 function renderMore(){
   const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date));
   const latestBw = bw[0];
@@ -1507,10 +1478,8 @@ function renderMore(){
       `).join('')}</div>` : `<div class="empty-state">No entries yet.</div>`}
     </div>
 
-    <div class="card">
-      <div class="card-title">Program</div>
-      <button class="btn btn-secondary btn-block" onclick="openEditor()">✏️ Customize Exercises &amp; Days</button>
-    </div>
+    ${renderProgramsCard()}
+    ${renderMesoPlannerCard()}
 
     <div class="card">
       <div class="card-title">Behavior</div>
@@ -1527,17 +1496,17 @@ function renderMore(){
     ${renderVacationCard()}
 
     <div class="card">
+      <div class="card-title">App</div>
+      <div class="list-row-sub" style="margin-bottom:10px;">Version ${APP_VERSION}</div>
+      <button class="btn btn-secondary btn-block" onclick="forceUpdate()">🔄 Check for Updates</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">Backup</div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary btn-block" onclick="exportBackup()">⬇ Export .json</button>
         <button class="btn btn-secondary btn-block" onclick="document.getElementById('importFile').click()">⬆ Import .json</button>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">App</div>
-      <div class="list-row-sub" style="margin-bottom:10px;">Version ${APP_VERSION}</div>
-      <button class="btn btn-secondary btn-block" onclick="forceUpdate()">🔄 Check for Updates</button>
     </div>
 
     <div class="card">
@@ -1555,54 +1524,6 @@ function setStreakTolerance(n){
   state.data.settings.streakGapTolerance = n;
   saveData();
   render();
-}
-function renderVacationCard(){
-  const active = getActiveVacation();
-  return `
-    <div class="card">
-      <div class="card-title">Vacation Mode</div>
-      ${active ? `
-        <div class="list-row-sub" style="margin-bottom:10px;">On vacation since ${prettyDate(active.start)} — your streak is frozen.</div>
-        <button class="btn btn-secondary btn-block" onclick="endVacation()">End Vacation</button>
-      ` : `
-        <div class="list-row-sub" style="margin-bottom:10px;">Going away? Freeze your streak so missed days don't break it.</div>
-        <button class="btn btn-secondary btn-block" onclick="startVacation()">🏖️ Start Vacation</button>
-      `}
-    </div>
-  `;
-}
-function startVacation(){
-  if(getActiveVacation()) return;
-  snapshot();
-  state.data.vacations.push({start:todayStr(), end:null});
-  saveData();
-  showToast('Vacation mode on — streak frozen', 4500, undoLast);
-  render();
-}
-function endVacation(){
-  const v = getActiveVacation();
-  if(!v) return;
-  snapshot();
-  v.end = todayStr();
-  saveData();
-  showToast('Welcome back — streak resumed', 4500, undoLast);
-  render();
-}
-async function forceUpdate(){
-  showToast('Checking for updates…');
-  try{
-    if('serviceWorker' in navigator){
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for(const r of regs){ await r.unregister(); }
-    }
-    if(window.caches){
-      const keys = await caches.keys();
-      for(const k of keys){ await caches.delete(k); }
-    }
-  }catch(e){}
-  setTimeout(()=>{
-    window.location.href = location.origin + location.pathname + '?t=' + Date.now();
-  }, 300);
 }
 function logBodyweight(){
   const val = Number(document.getElementById('bwInput').value);
@@ -1645,6 +1566,40 @@ function renderLineChart(points){
   `;
 }
 
+/* ---- vacation mode ---- */
+function renderVacationCard(){
+  const active = getActiveVacation();
+  return `
+    <div class="card">
+      <div class="card-title">Vacation Mode</div>
+      ${active ? `
+        <div class="list-row-sub" style="margin-bottom:10px;">On vacation since ${prettyDate(active.start)} — your streak is frozen.</div>
+        <button class="btn btn-secondary btn-block" onclick="endVacation()">End Vacation</button>
+      ` : `
+        <div class="list-row-sub" style="margin-bottom:10px;">Going away? Freeze your streak so missed days don't break it.</div>
+        <button class="btn btn-secondary btn-block" onclick="startVacation()">🏖️ Start Vacation</button>
+      `}
+    </div>
+  `;
+}
+function startVacation(){
+  if(getActiveVacation()) return;
+  snapshot();
+  state.data.vacations.push({start:todayStr(), end:null});
+  saveData();
+  showToast('Vacation mode on — streak frozen', 4500, undoLast);
+  render();
+}
+function endVacation(){
+  const v = getActiveVacation();
+  if(!v) return;
+  snapshot();
+  v.end = todayStr();
+  saveData();
+  showToast('Welcome back — streak resumed', 4500, undoLast);
+  render();
+}
+
 /* ---- program editor ---- */
 function openEditor(){ state.editorOpen = true; state.searchOpen = false; render(); }
 function closeEditor(){ state.editorOpen = false; render(); }
@@ -1652,7 +1607,7 @@ function renderEditor(){
   return `
     <div class="card">
       <div class="card-title">Customize Program</div>
-      <div class="list-row-sub">Rename days, reorder days or exercises, add/remove lifts. Removing an exercise keeps its history under Progress (Archived).</div>
+      <div class="list-row-sub">Rename days, reorder days or exercises, add/remove lifts, or flag a lift as single-side (L/R). Removing an exercise keeps its history under Progress (Archived).</div>
     </div>
     ${[1,2,3,4].map(day=>renderEditorDay(day)).join('')}
     <button class="btn btn-secondary btn-block" onclick="closeEditor()">Done</button>
@@ -1679,13 +1634,15 @@ function renderEditorDay(day){
         return `
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
           <input class="text-input" style="flex:1;" value="${escapeHtml(ex.name)}" onchange="renameExercise('${id}', this.value)">
+          <label class="uni-check-label"><input type="checkbox" ${ex.unilateral?'checked':''} onchange="toggleExerciseUnilateral('${id}', this.checked)">L/R</label>
           <button class="icon-btn editor-row-btn" onclick="moveExercise(${day},'${id}',-1)">↑</button>
           <button class="icon-btn editor-row-btn" onclick="moveExercise(${day},'${id}',1)">↓</button>
           <button class="icon-btn editor-row-btn" style="color:var(--danger);" onclick="removeExerciseFromDay(${day},'${id}')">✕</button>
         </div>`;
       }).join('')}
-      <div style="display:flex; gap:6px; margin-top:6px;">
+      <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
         <input class="text-input" style="flex:1;" id="newExInput-${day}" placeholder="New exercise name">
+        <label class="uni-check-label"><input type="checkbox" id="newExUni-${day}">L/R</label>
         <button class="btn btn-secondary btn-sm" onclick="addExerciseToDay(${day})">+ Add</button>
       </div>
     </div>
@@ -1694,6 +1651,13 @@ function renderEditorDay(day){
 function updateDayName(day,val){ if(val.trim()) state.data.program[day].name = val; saveData(); }
 function updateDayBlurb(day,val){ state.data.program[day].blurb = val; saveData(); }
 function renameExercise(id,val){ if(val.trim()) state.data.exercises[id].name = val; saveData(); }
+function toggleExerciseUnilateral(id, val){
+  if(!state.data.exercises[id]) return;
+  state.data.exercises[id].unilateral = val;
+  saveData();
+  delete state.draftSets[id];
+  render();
+}
 function moveExercise(day, id, dir){
   const arr = state.data.program[day].exerciseIds;
   const idx = arr.indexOf(id);
@@ -1712,10 +1676,11 @@ function removeExerciseFromDay(day, id){
 }
 function addExerciseToDay(day){
   const input = document.getElementById('newExInput-'+day);
+  const uniCheckbox = document.getElementById('newExUni-'+day);
   const val = input.value.trim();
   if(!val) return;
   const id = 'ex_'+uid();
-  state.data.exercises[id] = {name:val};
+  state.data.exercises[id] = {name:val, unilateral: uniCheckbox ? uniCheckbox.checked : false};
   state.data.program[day].exerciseIds.push(id);
   saveData();
   input.value = '';
@@ -1729,6 +1694,178 @@ function moveDay(day, dir){
   state.data.program[other] = tmp;
   saveData();
   render();
+}
+
+/* ---- saved programs ---- */
+function renderProgramsCard(){
+  const saved = state.data.savedPrograms || [];
+  return `
+    <div class="card">
+      <div class="card-title">Program</div>
+      <button class="btn btn-secondary btn-block" onclick="openEditor()">✏️ Customize Exercises &amp; Days</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px;" onclick="saveCurrentProgram()">💾 Save Current Program As...</button>
+      ${saved.length ? `
+        <label class="field-label">Saved Programs</label>
+        ${saved.map(sp=>`
+          <div class="list-row">
+            <div><div class="list-row-title">${escapeHtml(sp.name)}</div><div class="list-row-sub">Saved ${prettyDate(sp.createdAt)}</div></div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="loadSavedProgram('${sp.id}')">Load</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSavedProgram('${sp.id}')">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      ` : `<div class="list-row-sub" style="margin-top:10px;">Save your current split so you can switch between programs later — like an in-season vs. off-season plan — without losing either. Your workout history is always kept, no matter which program is active.</div>`}
+    </div>
+  `;
+}
+function saveCurrentProgram(){
+  const name = window.prompt('Name this program:', 'My Program');
+  if(!name || !name.trim()) return;
+  snapshot();
+  state.data.savedPrograms.push({
+    id: uid(),
+    name: name.trim(),
+    program: JSON.parse(JSON.stringify(state.data.program)),
+    exercises: JSON.parse(JSON.stringify(state.data.exercises)),
+    createdAt: todayStr(),
+  });
+  saveData();
+  showToast('Program saved', 4500, undoLast);
+  render();
+}
+function loadSavedProgram(id){
+  const sp = state.data.savedPrograms.find(p=>p.id===id);
+  if(!sp) return;
+  if(!confirm(`Switch to "${sp.name}"? This replaces your active program. Your workout history stays intact either way.`)) return;
+  snapshot();
+  state.data.program = JSON.parse(JSON.stringify(sp.program));
+  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(sp.exercises))};
+  saveData();
+  showToast(`Loaded "${sp.name}"`, 4500, undoLast);
+  render();
+}
+function deleteSavedProgram(id){
+  snapshot();
+  state.data.savedPrograms = state.data.savedPrograms.filter(p=>p.id!==id);
+  saveData();
+  showToast('Saved program deleted', 4500, undoLast);
+  render();
+}
+
+/* ---- mesocycle planner ---- */
+function renderMesoPlannerCard(){
+  const m = state.data.mesocycle;
+  return `
+    <div class="card">
+      <div class="card-title">Mesocycle Planner</div>
+      ${m ? `
+        <div class="list-row-sub" style="margin-bottom:10px;">Active plan: Week ${currentMesoWeek()||'—'} of ${m.weeks}, started ${prettyDate(m.startDate)}.</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-block" onclick="openMesoEditor()">Edit Plan</button>
+          <button class="btn btn-danger btn-block" onclick="endMesocycle()">End Plan</button>
+        </div>
+      ` : `
+        <div class="list-row-sub" style="margin-bottom:10px;">Plan target weights across a 3–6 week block instead of only reacting week to week.</div>
+        <button class="btn btn-secondary btn-block" onclick="openMesoEditor()">📅 Plan a Mesocycle</button>
+      `}
+    </div>
+  `;
+}
+function openMesoEditor(){
+  const existing = state.data.mesocycle;
+  state.mesoDraft = existing ? JSON.parse(JSON.stringify(existing)) : { startDate: todayStr(), weeks: 4, targets: {} };
+  state.mesoEditorOpen = true;
+  render();
+}
+function closeMesoEditor(){ state.mesoEditorOpen = false; render(); }
+function setMesoWeeks(n){
+  state.mesoDraft.weeks = n;
+  for(const exId in state.mesoDraft.targets){
+    const arr = state.mesoDraft.targets[exId];
+    while(arr.length < n) arr.push('');
+    arr.length = n;
+  }
+  render();
+}
+function updateMesoStart(val){ state.mesoDraft.startDate = val; }
+function updateMesoTarget(exId, weekIdx, val){
+  if(!state.mesoDraft.targets[exId]) state.mesoDraft.targets[exId] = new Array(state.mesoDraft.weeks).fill('');
+  state.mesoDraft.targets[exId][weekIdx] = val;
+}
+function renderMesoEditor(){
+  const d = state.mesoDraft;
+  return `
+    <div class="card">
+      <div class="card-title">Plan Mesocycle</div>
+      <div class="list-row-sub">Set a start date and a target weight per week for each lift. Leave a cell blank to skip that exercise.</div>
+    </div>
+    <div class="card">
+      <label class="field-label" style="margin-top:0;">Start Date</label>
+      <input class="text-input" type="date" value="${d.startDate}" onchange="updateMesoStart(this.value)">
+      <label class="field-label">Block Length</label>
+      <div class="pill-row" style="margin-bottom:0;">
+        ${[3,4,5,6].map(n=>`<div class="pill ${d.weeks===n?'active':''}" onclick="setMesoWeeks(${n})">${n} wks</div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekly Targets (lb)</div>
+      <div class="meso-table-wrap">
+        <table class="meso-table">
+          <thead><tr><th>Exercise</th>${Array.from({length:d.weeks},(_,i)=>`<th>Wk${i+1}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${allExercises().map(ex=>`
+              <tr>
+                <td>${ex.name}</td>
+                ${Array.from({length:d.weeks},(_,w)=>`<td><input class="set-input" type="number" value="${(d.targets[ex.id]||[])[w] ?? ''}" oninput="updateMesoTarget('${ex.id}',${w},this.value)"></td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="saveMesocycle()">Save Mesocycle</button>
+    <button class="btn btn-secondary btn-block" onclick="closeMesoEditor()">Cancel</button>
+    <div style="height:10px;"></div>
+  `;
+}
+function saveMesocycle(){
+  const cleanTargets = {};
+  for(const exId in state.mesoDraft.targets){
+    const arr = state.mesoDraft.targets[exId].map(v=>Number(v)||0);
+    if(arr.some(v=>v>0)) cleanTargets[exId] = arr;
+  }
+  state.data.mesocycle = { startDate: state.mesoDraft.startDate, weeks: state.mesoDraft.weeks, targets: cleanTargets };
+  saveData();
+  state.mesoEditorOpen = false;
+  showToast('Mesocycle saved');
+  render();
+}
+function endMesocycle(){
+  if(!confirm('End the current mesocycle plan?')) return;
+  snapshot();
+  state.data.mesocycle = null;
+  saveData();
+  showToast('Mesocycle ended', 4500, undoLast);
+  render();
+}
+
+/* ---- app version / update ---- */
+async function forceUpdate(){
+  showToast('Checking for updates…');
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const r of regs){ await r.unregister(); }
+    }
+    if(window.caches){
+      const keys = await caches.keys();
+      for(const k of keys){ await caches.delete(k); }
+    }
+  }catch(e){}
+  setTimeout(()=>{
+    window.location.href = location.origin + location.pathname + '?t=' + Date.now();
+  }, 300);
 }
 
 /* ---- backup / import / reset ---- */
@@ -1886,7 +2023,8 @@ document.getElementById('content').addEventListener('touchend', function(e){
   const dx = e.changedTouches[0].clientX - _touchStartX;
   const dy = e.changedTouches[0].clientY - _touchStartY;
   _touchStartX = null;
-  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !state.searchOpen && !state.editorOpen && !state.cooldownOpen && !state.focusOpen){
+  const blocked = state.searchOpen || state.editorOpen || state.mesoEditorOpen || state.summaryOpen || state.cooldownOpen;
+  if(Math.abs(dx)>60 && Math.abs(dy)<50 && !blocked){
     const curIdx = TAB_ORDER.indexOf(state.tab);
     let newIdx = curIdx + (dx<0 ? 1 : -1);
     newIdx = Math.max(0, Math.min(TAB_ORDER.length-1, newIdx));

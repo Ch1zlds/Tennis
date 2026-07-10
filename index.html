@@ -163,6 +163,15 @@ h1,h2,h3,.display{
   border-radius:5px; letter-spacing:0.05em; white-space:nowrap; text-transform:uppercase;
 }
 .side-label{font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:10px 0 4px;}
+.swatch-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;}
+.swatch{
+  width:38px; height:38px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+  display:flex; align-items:center; justify-content:center; transition:transform .12s ease, border-color .12s ease;
+}
+.swatch:active{transform:scale(0.9);}
+.swatch.active{border-color:#fff;}
+.swatch-check{color:#fff; font-size:14px; font-weight:700; opacity:0;}
+.swatch.active .swatch-check{opacity:1;}
 .set-row{display:grid; grid-template-columns:28px 1fr 1fr; gap:8px; align-items:center; margin-bottom:6px;}
 .set-idx{font-family:'IBM Plex Mono'; font-size:12px; color:var(--text-dim); text-align:center;}
 .set-input{
@@ -291,7 +300,13 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 <div id="app">
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">!</div>
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="4" width="4" height="16" rx="1.4" fill="#0a0a0a"/>
+          <rect x="19" y="4" width="4" height="16" rx="1.4" fill="#0a0a0a"/>
+          <rect x="5" y="10.2" width="14" height="3.6" rx="1" fill="#0a0a0a"/>
+        </svg>
+      </div>
       <div class="brand-sub" id="headerDate"></div>
     </div>
     <button class="icon-btn" onclick="openSearch()" aria-label="Search exercises">🔍</button>
@@ -333,7 +348,29 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
+
+const ACCENT_THEMES = {
+  red:    { label:'Red',    swatch:'#ff2d12', lime:'#ff2d12', court:'#c81e0f' },
+  orange: { label:'Orange', swatch:'#ff8a1e', lime:'#ff8a1e', court:'#c2600e' },
+  yellow: { label:'Yellow', swatch:'#ffcc1e', lime:'#ffcc1e', court:'#b8930e' },
+  green:  { label:'Green',  swatch:'#3ecf5b', lime:'#3ecf5b', court:'#1f8f3a' },
+  blue:   { label:'Blue',   swatch:'#2e8bff', lime:'#2e8bff', court:'#1c4fb0' },
+  purple: { label:'Purple', swatch:'#b25cff', lime:'#b25cff', court:'#7a2fd6' },
+  pink:   { label:'Pink',   swatch:'#ff4fa3', lime:'#ff4fa3', court:'#c92877' },
+};
+function applyAccentTheme(){
+  const key = (state.data && state.data.settings.accentColor) || 'red';
+  const t = ACCENT_THEMES[key] || ACCENT_THEMES.red;
+  document.documentElement.style.setProperty('--lime', t.lime);
+  document.documentElement.style.setProperty('--court', t.court);
+}
+function setAccentTheme(key){
+  state.data.settings.accentColor = key;
+  saveData();
+  applyAccentTheme();
+  render();
+}
 
 const GOGGINS_QUOTES = [
   "Stay hard.",
@@ -447,7 +484,7 @@ function defaultData(){
     mesocycle: null,
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2 },
+    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red' },
     meta: { createdAt: new Date().toISOString() }
   };
 }
@@ -1463,6 +1500,17 @@ function renderMore(){
 
   return `
     <div class="card">
+      <div class="card-title">Appearance</div>
+      <div class="list-row-sub" style="margin-bottom:6px;">Accent Color</div>
+      <div class="swatch-row">
+        ${Object.entries(ACCENT_THEMES).map(([key,t])=>`
+          <div class="swatch ${((state.data.settings.accentColor||'red')===key)?'active':''}" style="background:${t.swatch};" onclick="setAccentTheme('${key}')" title="${t.label}">
+            <span class="swatch-check">✓</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card">
       <div class="card-title">Bodyweight</div>
       <div style="display:flex; gap:8px; align-items:flex-end;">
         <div style="flex:1;">
@@ -2043,6 +2091,7 @@ async function boot(){
   const dateEl = document.getElementById('headerDate');
   if(dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'}).toUpperCase();
   await loadData();
+  applyAccentTheme();
   updateTimerDisplay();
   if(state.data.settings.autoOpenNextWorkout){
     state.tab = 'workout';

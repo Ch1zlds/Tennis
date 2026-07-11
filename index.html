@@ -155,6 +155,13 @@ h1,h2,h3,.display{
 
 /* exercise card */
 .ex-card{background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:10px;}
+.superset-wrap{border:1.5px dashed var(--accent); border-radius:var(--radius); padding:10px; margin-bottom:10px;}
+.superset-wrap .ex-card{margin-bottom:8px;}
+.superset-wrap .ex-card:last-child{margin-bottom:0;}
+.superset-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); margin:2px 0 8px 4px;}
+.muscle-map{display:block; width:100%; max-width:220px; height:auto; margin:0 auto 16px;}
+.muscle-bar-track{background:var(--bg-card-2); border-radius:999px; height:7px; overflow:hidden;}
+.muscle-bar-fill{height:100%; background:var(--accent); border-radius:999px; transition:width .3s ease;}
 .ex-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;}
 .ex-name{font-size:15px; font-weight:700;}
 .ex-prev{font-size:11px; color:var(--text-dim); margin-top:3px;}
@@ -348,7 +355,7 @@ label.field-label{font-size:11px; color:var(--text-dim); text-transform:uppercas
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.9.0';
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff2d12', lime:'#ff2d12', court:'#c81e0f' },
@@ -399,10 +406,10 @@ function quoteForToday(){
 }
 
 const DEFAULT_PROGRAM = {
-  1: { name:'Push & Serve Power', blurb:'Shoulders, chest, triceps — the drivers behind your serve and overhead.', exerciseIds:['sh_press','inc_press','push_press','lat_raise','front_raise','tri_ext'] },
-  2: { name:'Legs & Court Movement', blurb:'Squats, lunges and lateral work for split-step power and court coverage.', exerciseIds:['goblet_squat','walk_lunge','lat_lunge','rdl','step_up','calf_raise'] },
-  3: { name:'Pull & Rotational Core', blurb:'Rows and rotation for stroke power and a strong core through impact.', exerciseIds:['bent_row','single_row','rev_fly','woodchop','russian_twist','bicep_curl'] },
-  4: { name:'Power & Stability', blurb:'Full-body power and joint stability to move fast and stay injury-free.', exerciseIds:['thruster','sl_rdl','renegade_row','farmers_carry','arnold_press','wrist_curl'] },
+  1: { name:'Push & Serve Power', blurb:'Shoulders, chest, triceps — the drivers behind your serve and overhead.', exerciseIds:['sh_press','inc_press','push_press','lat_raise','front_raise','tri_ext'], supersets:[] },
+  2: { name:'Legs & Court Movement', blurb:'Squats, lunges and lateral work for split-step power and court coverage.', exerciseIds:['goblet_squat','walk_lunge','lat_lunge','rdl','step_up','calf_raise'], supersets:[] },
+  3: { name:'Pull & Rotational Core', blurb:'Rows and rotation for stroke power and a strong core through impact.', exerciseIds:['bent_row','single_row','rev_fly','woodchop','russian_twist','bicep_curl'], supersets:[] },
+  4: { name:'Power & Stability', blurb:'Full-body power and joint stability to move fast and stay injury-free.', exerciseIds:['thruster','sl_rdl','renegade_row','farmers_carry','arnold_press','wrist_curl'], supersets:[] },
 };
 const DEFAULT_EXERCISES = {
   sh_press:{name:'Dumbbell Shoulder Press'}, inc_press:{name:'Dumbbell Incline Press'},
@@ -417,6 +424,45 @@ const DEFAULT_EXERCISES = {
   thruster:{name:'Dumbbell Thruster'}, sl_rdl:{name:'Dumbbell Single-Leg RDL', unilateral:true},
   renegade_row:{name:'Dumbbell Renegade Row', unilateral:true}, farmers_carry:{name:"Dumbbell Farmer's Carry"},
   arnold_press:{name:'Dumbbell Arnold Press'}, wrist_curl:{name:'Dumbbell Wrist Curl (Elbow Guard)'},
+};
+
+const EXERCISE_MUSCLE_MAP = {
+  sh_press:'Shoulders', inc_press:'Chest', push_press:'Shoulders', lat_raise:'Shoulders',
+  front_raise:'Shoulders', tri_ext:'Triceps',
+  goblet_squat:'Quads', walk_lunge:'Quads', lat_lunge:'Quads', rdl:'Hamstrings',
+  step_up:'Quads', calf_raise:'Calves',
+  bent_row:'Back', single_row:'Back', rev_fly:'Shoulders', woodchop:'Core',
+  russian_twist:'Core', bicep_curl:'Biceps',
+  thruster:'Quads', sl_rdl:'Hamstrings', renegade_row:'Back', farmers_carry:'Core',
+  arnold_press:'Shoulders', wrist_curl:'Forearms',
+};
+
+const PROGRAM_TEMPLATES = {
+  standard: {
+    label: 'Power & Serve (Standard 4-Day)',
+    blurb: 'The default balanced split — push, legs, pull, power.',
+    program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
+  },
+  inseason: {
+    label: 'In-Season Maintenance',
+    blurb: 'Lighter, joint-friendly work to maintain strength between matches without burying you.',
+    program: {
+      1: { name:'Shoulder & Serve Care', blurb:'Lighter loads, higher reps — keep the serve arm healthy through the season.', exerciseIds:['sh_press','front_raise','rev_fly','wrist_curl'], supersets:[] },
+      2: { name:'Legs & Movement', blurb:'Maintain lower-body power for court coverage without excess fatigue.', exerciseIds:['goblet_squat','lat_lunge','calf_raise','sl_rdl'], supersets:[] },
+      3: { name:'Core & Stability', blurb:'Rotational strength and single-side stability for injury resilience.', exerciseIds:['russian_twist','woodchop','single_row','arnold_press'], supersets:[] },
+      4: { name:'Light Full-Body Circuit', blurb:'A light full-body touch-up — keep moving without adding real fatigue.', exerciseIds:['thruster','farmers_carry','bicep_curl','tri_ext'], supersets:[] },
+    },
+  },
+  offseason: {
+    label: 'Off-Season Power Builder',
+    blurb: 'Heavier compound focus and more volume for building a stronger base out of season.',
+    program: {
+      1: { name:'Heavy Push', blurb:'Build raw pressing strength for a bigger, more durable serve.', exerciseIds:['inc_press','sh_press','push_press','tri_ext'], supersets:[] },
+      2: { name:'Heavy Legs', blurb:'Build the lower-body base that everything on court gets driven from.', exerciseIds:['goblet_squat','rdl','walk_lunge','step_up'], supersets:[] },
+      3: { name:'Heavy Pull', blurb:'Balance out all the pressing work and build a resilient upper back.', exerciseIds:['bent_row','single_row','rev_fly','bicep_curl'], supersets:[] },
+      4: { name:'Explosive Power', blurb:'Full-body power work to convert new strength into court speed.', exerciseIds:['thruster','farmers_carry','renegade_row','arnold_press'], supersets:[] },
+    },
+  },
 };
 
 const STRETCHES_BY_DAY = {
@@ -482,9 +528,10 @@ function defaultData(){
     vacations: [],
     savedPrograms: [],
     mesocycle: null,
+    programRotation: null,
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red' },
+    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5 },
     meta: { createdAt: new Date().toISOString() }
   };
 }
@@ -512,6 +559,7 @@ let state = {
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
   calSelected: null,
+  rotationIntervalDraft: 4,
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
   loaded:false,
 };
@@ -548,6 +596,7 @@ async function loadData(){
         vacations: parsed.vacations || [],
         savedPrograms: parsed.savedPrograms || [],
         mesocycle: parsed.mesocycle || null,
+        programRotation: parsed.programRotation || null,
         settings: {...d.settings, ...(parsed.settings||{})}
       };
     } else {
@@ -650,11 +699,15 @@ function fourWeeksAgoEntry(exId){
   if(best && bestDiff <= 5*86400000) return best;
   return null;
 }
+function roundToPlate(weight){
+  const inc = state.data.settings.plateIncrement || 2.5;
+  return Math.round(weight/inc) * inc;
+}
 function suggestedWeight(exId){
   const prev = previousWeightFor(exId);
   if(!prev || prev.maxWeight<=0) return null;
-  const inc = prev.maxWeight >= 25 ? 5 : 2.5;
-  return Math.round((prev.maxWeight + inc) * 2) / 2;
+  const inc = state.data.settings.plateIncrement || 2.5;
+  return roundToPlate(prev.maxWeight + inc);
 }
 function workoutDatesSet(){
   return new Set(state.data.workouts.map(w=>w.date));
@@ -751,7 +804,93 @@ function mesoTargetFor(exId){
   const wk = currentMesoWeek();
   if(!m || !wk || !m.targets[exId]) return null;
   const val = m.targets[exId][wk-1];
-  return val>0 ? val : null;
+  return val>0 ? roundToPlate(val) : null;
+}
+
+/* ---------------- Program Rotation ---------------- */
+function currentRotationProgramId(){
+  const r = state.data.programRotation;
+  if(!r || !r.enabled || !r.programIds || r.programIds.length<2 || !r.startDate) return null;
+  const start = new Date(r.startDate+'T00:00:00');
+  const today = new Date(todayStr()+'T00:00:00');
+  const diffDays = Math.floor((today-start)/86400000);
+  if(diffDays<0) return r.programIds[0];
+  const weeksElapsed = Math.floor(diffDays/7);
+  const cycleIndex = Math.floor(weeksElapsed/r.intervalWeeks) % r.programIds.length;
+  return r.programIds[cycleIndex];
+}
+function nextRotationDate(){
+  const r = state.data.programRotation;
+  if(!r || !r.enabled) return null;
+  const start = new Date(r.startDate+'T00:00:00');
+  const today = new Date(todayStr()+'T00:00:00');
+  const diffDays = Math.floor((today-start)/86400000);
+  const weeksElapsed = Math.floor(diffDays/7);
+  const cycleWeek = Math.floor(weeksElapsed/r.intervalWeeks);
+  const nextBoundaryDays = (cycleWeek+1) * r.intervalWeeks * 7;
+  return dateToStr(new Date(start.getTime() + nextBoundaryDays*86400000));
+}
+function checkProgramRotation(){
+  const r = state.data.programRotation;
+  if(!r || !r.enabled) return;
+  const targetId = currentRotationProgramId();
+  if(!targetId || targetId === r.lastAppliedProgramId) return;
+  const sp = (state.data.savedPrograms||[]).find(p=>p.id===targetId);
+  if(!sp) return;
+  state.data.program = JSON.parse(JSON.stringify(sp.program));
+  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(sp.exercises))};
+  r.lastAppliedProgramId = targetId;
+  saveData();
+  showToast(`🔁 Rotated to "${sp.name}" for this block`);
+}
+function selectRotationInterval(n){
+  state.rotationIntervalDraft = n;
+  render();
+}
+function startRotation(){
+  const checked = Array.from(document.querySelectorAll('.rotation-check:checked')).map(el=>el.value);
+  if(checked.length<2){ showToast('Select at least 2 saved programs'); return; }
+  snapshot();
+  state.data.programRotation = {
+    enabled: true,
+    programIds: checked,
+    intervalWeeks: state.rotationIntervalDraft || 4,
+    startDate: todayStr(),
+    lastAppliedProgramId: null,
+  };
+  checkProgramRotation();
+  saveData();
+  showToast('Rotation started', 4500, undoLast);
+  render();
+}
+function stopRotation(){
+  if(!confirm('Stop auto-rotating programs? Your current program stays as-is.')) return;
+  state.data.programRotation.enabled = false;
+  saveData();
+  showToast('Rotation stopped');
+  render();
+}
+function addTemplateToSaved(key){
+  const t = PROGRAM_TEMPLATES[key];
+  if(!t) return;
+  const name = window.prompt('Name this saved program:', t.label);
+  if(!name || !name.trim()) return;
+  const exercisesSnapshot = {};
+  Object.values(t.program).forEach(day=>{
+    day.exerciseIds.forEach(id=>{
+      exercisesSnapshot[id] = state.data.exercises[id] ? {...state.data.exercises[id]} : (DEFAULT_EXERCISES[id] ? {...DEFAULT_EXERCISES[id]} : {name:id});
+    });
+  });
+  state.data.savedPrograms.push({
+    id: uid(),
+    name: name.trim(),
+    program: JSON.parse(JSON.stringify(t.program)),
+    exercises: exercisesSnapshot,
+    createdAt: todayStr(),
+  });
+  saveData();
+  showToast(`"${name.trim()}" added to Saved Programs`);
+  render();
 }
 
 /* ---------------- rendering shell ---------------- */
@@ -823,6 +962,7 @@ function renderDashboard(){
     </div>
     ${renderRecapCard()}
     ${renderMesoCard()}
+    ${renderRotationStatusCard()}
     <div class="card">
       <div class="card-title">Last 12 Weeks</div>
       ${renderHeatmap()}
@@ -938,6 +1078,20 @@ function renderMesoCard(){
     </div>
   `;
 }
+function renderRotationStatusCard(){
+  const r = state.data.programRotation;
+  if(!r || !r.enabled) return '';
+  const activeId = currentRotationProgramId();
+  const activeSp = (state.data.savedPrograms||[]).find(p=>p.id===activeId);
+  const next = nextRotationDate();
+  return `
+    <div class="card">
+      <div class="card-title">Program Rotation</div>
+      <div style="font-size:14px; font-weight:600;">${activeSp?escapeHtml(activeSp.name):'—'}</div>
+      <div class="list-row-sub" style="margin-top:4px;">Next rotation ${next?prettyDate(next):'—'}</div>
+    </div>
+  `;
+}
 function renderHeatmap(){
   const todayD = new Date(); todayD.setHours(0,0,0,0);
   const daysBack = 83;
@@ -984,11 +1138,29 @@ function ensureDraft(day){
     }
   }
 }
+function buildWorkoutDisplayGroups(day){
+  const def = state.data.program[day];
+  const supersets = def.supersets || [];
+  const seen = new Set();
+  const groups = [];
+  for(const id of def.exerciseIds){
+    if(seen.has(id)) continue;
+    const pair = supersets.find(p=>p[0]===id || p[1]===id);
+    if(pair && def.exerciseIds.includes(pair[0]) && def.exerciseIds.includes(pair[1])){
+      groups.push({type:'superset', ids:pair});
+      seen.add(pair[0]); seen.add(pair[1]);
+    } else {
+      groups.push({type:'single', ids:[id]});
+      seen.add(id);
+    }
+  }
+  return groups;
+}
 function renderWorkout(){
   const day = state.workoutDay;
   ensureDraft(day);
   const def = state.data.program[day];
-  const exList = def.exerciseIds.map(id=>({id, name:(state.data.exercises[id]||{name:id}).name}));
+  const groups = buildWorkoutDisplayGroups(day);
   return `
     <div class="pill-row">
       ${[1,2,3,4].map(d=>`<div class="pill ${d===day?'active':''}" onclick="changeWorkoutDay(${d})">Day ${d}</div>`).join('')}
@@ -1002,7 +1174,14 @@ function renderWorkout(){
         <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="repeatLastWorkout()">↺ Repeat Last</button>
       </div>
     </div>
-    ${exList.map(ex=>renderExerciseCard(ex)).join('')}
+    ${groups.map(g=>{
+      if(g.type==='superset'){
+        const cards = g.ids.map(id=>renderExerciseCard({id, name:(state.data.exercises[id]||{name:id}).name})).join('');
+        return `<div class="superset-wrap"><div class="superset-label">🔗 Superset — alternate sets between these two</div>${cards}</div>`;
+      }
+      const id = g.ids[0];
+      return renderExerciseCard({id, name:(state.data.exercises[id]||{name:id}).name});
+    }).join('')}
     <div class="card">
       <div class="card-title">Workout Notes</div>
       <textarea class="notes" id="workoutNotes" placeholder="How did it feel? Court conditions, soreness, focus areas..." oninput="state.draftNotes=this.value">${escapeHtml(state.draftNotes)}</textarea>
@@ -1166,6 +1345,7 @@ function completeWorkout(){
   snapshot();
   const date = todayStr();
   const prExIds = [];
+  const prDetails = [];
   let totalSets = 0, totalVolume = 0;
   for(const exId in exercisesOut){
     const ex = exercisesOut[exId];
@@ -1174,7 +1354,11 @@ function completeWorkout(){
     for(const s of allSets){ totalVolume += s.weight*s.reps; }
     const priorBest = personalBest(exId);
     const maxThis = allSets.length ? Math.max(...allSets.map(s=>s.weight)) : 0;
-    if(!priorBest || maxThis > priorBest.maxWeight) prExIds.push(exId);
+    if(!priorBest || maxThis > priorBest.maxWeight){
+      prExIds.push(exId);
+      const setAtMax = allSets.find(s=>s.weight===maxThis) || allSets[0];
+      prDetails.push({ exId, weight:maxThis, reps: setAtMax ? setAtMax.reps : 0 });
+    }
   }
   const workout = { id:uid(), date, day, exercises:exercisesOut, notes: state.draftNotes||'', prExIds };
   const existingIdx = state.data.workouts.findIndex(w=>w.date===date && w.day===day);
@@ -1187,9 +1371,11 @@ function completeWorkout(){
   const msg = prExIds.length ? `🏆 Workout saved — ${prExIds.length} new PR${prExIds.length>1?'s':''}!` : '✅ Workout saved';
   showToast(msg, 4500, undoLast);
   state.summaryData = {
-    day, totalSets, totalVolume,
+    day, date, totalSets, totalVolume,
     exerciseCount: Object.keys(exercisesOut).length,
     prCount: prExIds.length,
+    prDetails,
+    exercisesSnapshot: exercisesOut,
   };
   state.summaryOpen = true;
   state.cooldownDay = day;
@@ -1211,8 +1397,72 @@ function renderSummary(){
       <div class="stat-box"><div class="stat-num">${s.exerciseCount}</div><div class="stat-label">Exercises</div></div>
       <div class="stat-box"><div class="stat-num">${s.prCount}</div><div class="stat-label">PRs Hit</div></div>
     </div>
+    ${(s.prDetails && s.prDetails.length) ? `
+      <div class="card">
+        <div class="card-title">🏆 PRs Hit Today</div>
+        ${s.prDetails.map(p=>{
+          const name = (state.data.exercises[p.exId]||{name:p.exId}).name;
+          return `
+            <div class="list-row">
+              <div><div class="list-row-title">${escapeHtml(name)}</div><div class="list-row-sub">${p.weight} lb × ${p.reps}</div></div>
+              <button class="btn btn-secondary btn-sm" onclick="sharePrCard('${p.exId}', ${p.weight}, ${p.reps}, '${s.date}', ${s.day})">📤 Share</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+    ${renderMuscleHeatmap(s.exercisesSnapshot)}
     <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="continueToStretches()">Continue To Cool Down →</button>
     <div style="height:10px;"></div>
+  `;
+}
+function renderMuscleHeatmap(exercisesSnapshot){
+  if(!exercisesSnapshot) return '';
+  const totals = {};
+  for(const exId in exercisesSnapshot){
+    const ex = exercisesSnapshot[exId];
+    const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+    let vol = 0;
+    for(const s of allSets){ vol += (Number(s.weight)||0) * (Number(s.reps)||0); }
+    if(vol<=0) continue;
+    const group = EXERCISE_MUSCLE_MAP[exId] || 'Other';
+    totals[group] = (totals[group]||0) + vol;
+  }
+  const groups = Object.keys(totals);
+  if(!groups.length) return '';
+  const maxVol = Math.max(...groups.map(g=>totals[g]));
+  const intensity = g => Math.max(0.12, totals[g]/maxVol);
+  const zoneOpacity = g => totals[g] ? intensity(g).toFixed(2) : 0.06;
+
+  return `
+    <div class="card">
+      <div class="card-title">Muscles Worked</div>
+      <svg viewBox="0 0 200 300" class="muscle-map">
+        <circle cx="100" cy="26" r="20" fill="var(--bg-card-2)"/>
+        <ellipse cx="65" cy="66" rx="22" ry="15" fill="var(--accent)" fill-opacity="${zoneOpacity('Shoulders')}"/>
+        <ellipse cx="135" cy="66" rx="22" ry="15" fill="var(--accent)" fill-opacity="${zoneOpacity('Shoulders')}"/>
+        <rect x="70" y="60" width="60" height="42" rx="10" fill="var(--accent)" fill-opacity="${zoneOpacity('Chest')}"/>
+        <rect x="74" y="104" width="52" height="52" rx="8" fill="var(--accent)" fill-opacity="${zoneOpacity('Core')}"/>
+        <ellipse cx="38" cy="95" rx="13" ry="28" fill="var(--accent)" fill-opacity="${zoneOpacity('Biceps')}"/>
+        <ellipse cx="162" cy="95" rx="13" ry="28" fill="var(--accent)" fill-opacity="${zoneOpacity('Biceps')}"/>
+        <ellipse cx="31" cy="148" rx="10" ry="26" fill="var(--accent)" fill-opacity="${zoneOpacity('Triceps')}"/>
+        <ellipse cx="169" cy="148" rx="10" ry="26" fill="var(--accent)" fill-opacity="${zoneOpacity('Triceps')}"/>
+        <ellipse cx="26" cy="195" rx="9" ry="22" fill="var(--accent)" fill-opacity="${zoneOpacity('Forearms')}"/>
+        <ellipse cx="174" cy="195" rx="9" ry="22" fill="var(--accent)" fill-opacity="${zoneOpacity('Forearms')}"/>
+        <rect x="72" y="158" width="24" height="68" rx="10" fill="var(--accent)" fill-opacity="${zoneOpacity('Quads')}"/>
+        <rect x="104" y="158" width="24" height="68" rx="10" fill="var(--accent)" fill-opacity="${zoneOpacity('Hamstrings')}"/>
+        <ellipse cx="84" cy="258" rx="12" ry="22" fill="var(--accent)" fill-opacity="${zoneOpacity('Calves')}"/>
+        <ellipse cx="116" cy="258" rx="12" ry="22" fill="var(--accent)" fill-opacity="${zoneOpacity('Calves')}"/>
+      </svg>
+      ${groups.sort((a,b)=>totals[b]-totals[a]).map(g=>`
+        <div style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+            <span>${g}</span><span class="mono" style="color:var(--text-dim);">${totals[g].toLocaleString()} lb</span>
+          </div>
+          <div class="muscle-bar-track"><div class="muscle-bar-fill" style="width:${(intensity(g)*100).toFixed(0)}%;"></div></div>
+        </div>
+      `).join('')}
+    </div>
   `;
 }
 function continueToStretches(){
@@ -1313,7 +1563,10 @@ function renderProgress(){
         const pb = personalBest(e.id);
         return `<div class="list-row">
           <div><div class="list-row-title">${e.name}</div><div class="list-row-sub">${e.day?`Day ${e.day}`:'Archived'} · ${prettyDate(pb.date)}</div></div>
-          <div class="list-row-val">${pb.maxWeight} lb</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="list-row-val">${pb.maxWeight} lb</div>
+            <button class="icon-btn" style="width:32px; height:32px; font-size:13px;" onclick="sharePrCard('${e.id}', ${pb.maxWeight}, ${pb.reps}, '${pb.date}', ${e.day||1})" title="Share">📤</button>
+          </div>
         </div>`;
       }).join('') : `<div class="empty-state">Complete a workout to start tracking bests.</div>`}
     </div>
@@ -1526,8 +1779,18 @@ function renderMore(){
       `).join('')}</div>` : `<div class="empty-state">No entries yet.</div>`}
     </div>
 
+    ${renderTemplatesCard()}
     ${renderProgramsCard()}
+    ${renderRotationCard()}
     ${renderMesoPlannerCard()}
+
+    <div class="card">
+      <div class="card-title">Equipment</div>
+      <div class="list-row-sub" style="margin-bottom:6px;">Dumbbell increment — suggested weights and mesocycle targets round to what's actually on the rack.</div>
+      <div class="pill-row" style="margin-bottom:0;">
+        ${[2.5,5,10].map(n=>`<div class="pill ${((state.data.settings.plateIncrement??2.5)===n)?'active':''}" onclick="setPlateIncrement(${n})">${n} lb</div>`).join('')}
+      </div>
+    </div>
 
     <div class="card">
       <div class="card-title">Behavior</div>
@@ -1570,6 +1833,11 @@ function toggleSetting(key, val){
 }
 function setStreakTolerance(n){
   state.data.settings.streakGapTolerance = n;
+  saveData();
+  render();
+}
+function setPlateIncrement(n){
+  state.data.settings.plateIncrement = n;
   saveData();
   render();
 }
@@ -1693,11 +1961,46 @@ function renderEditorDay(day){
         <label class="uni-check-label"><input type="checkbox" id="newExUni-${day}">L/R</label>
         <button class="btn btn-secondary btn-sm" onclick="addExerciseToDay(${day})">+ Add</button>
       </div>
+      <label class="field-label">Supersets</label>
+      <div class="list-row-sub" style="margin-bottom:8px;">Pair two exercises to alternate sets between them instead of doing them back-to-back.</div>
+      ${(def.supersets||[]).map((pair,i)=>{
+        const nameA = (state.data.exercises[pair[0]]||{name:pair[0]}).name;
+        const nameB = (state.data.exercises[pair[1]]||{name:pair[1]}).name;
+        return `<div class="list-row"><div class="list-row-title" style="font-size:13px;">🔗 ${nameA} ↔ ${nameB}</div><button class="btn btn-danger btn-sm" onclick="removeSuperset(${day},${i})">✕</button></div>`;
+      }).join('')}
+      ${def.exerciseIds.length>=2 ? `
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <select class="text-input" id="supersetA-${day}">${def.exerciseIds.map(id=>`<option value="${id}">${escapeHtml((state.data.exercises[id]||{name:id}).name)}</option>`).join('')}</select>
+        <select class="text-input" id="supersetB-${day}">${def.exerciseIds.map(id=>`<option value="${id}">${escapeHtml((state.data.exercises[id]||{name:id}).name)}</option>`).join('')}</select>
+      </div>
+      <button class="btn btn-secondary btn-block" style="margin-top:6px;" onclick="addSuperset(${day})">🔗 Pair These Two</button>
+      ` : ''}
     </div>
   `;
 }
 function updateDayName(day,val){ if(val.trim()) state.data.program[day].name = val; saveData(); }
 function updateDayBlurb(day,val){ state.data.program[day].blurb = val; saveData(); }
+function addSuperset(day){
+  const aEl = document.getElementById('supersetA-'+day);
+  const bEl = document.getElementById('supersetB-'+day);
+  const a = aEl.value, b = bEl.value;
+  if(a===b){ showToast('Pick two different exercises'); return; }
+  const def = state.data.program[day];
+  def.supersets = def.supersets || [];
+  if(def.supersets.some(p=>p.includes(a)||p.includes(b))){
+    showToast('One of those is already paired — remove it first');
+    return;
+  }
+  def.supersets.push([a,b]);
+  saveData();
+  showToast('Superset paired');
+  render();
+}
+function removeSuperset(day, idx){
+  state.data.program[day].supersets.splice(idx,1);
+  saveData();
+  render();
+}
 function renameExercise(id,val){ if(val.trim()) state.data.exercises[id].name = val; saveData(); }
 function toggleExerciseUnilateral(id, val){
   if(!state.data.exercises[id]) return;
@@ -1718,6 +2021,9 @@ function moveExercise(day, id, dir){
 function removeExerciseFromDay(day, id){
   snapshot();
   state.data.program[day].exerciseIds = state.data.program[day].exerciseIds.filter(x=>x!==id);
+  if(state.data.program[day].supersets){
+    state.data.program[day].supersets = state.data.program[day].supersets.filter(p=>!p.includes(id));
+  }
   saveData();
   showToast('Exercise removed — history kept', 4500, undoLast);
   render();
@@ -1742,6 +2048,65 @@ function moveDay(day, dir){
   state.data.program[other] = tmp;
   saveData();
   render();
+}
+
+/* ---- tennis program templates ---- */
+function renderTemplatesCard(){
+  return `
+    <div class="card">
+      <div class="card-title">Tennis Program Templates</div>
+      <div class="list-row-sub" style="margin-bottom:10px;">Ready-made tennis-focused splits. Add one to Saved Programs, then optionally rotate between them below.</div>
+      ${Object.entries(PROGRAM_TEMPLATES).map(([key,t])=>`
+        <div class="list-row" style="align-items:flex-start;">
+          <div><div class="list-row-title">${t.label}</div><div class="list-row-sub" style="margin-top:3px; line-height:1.4;">${t.blurb}</div></div>
+          <button class="btn btn-secondary btn-sm" style="flex-shrink:0; margin-left:10px;" onclick="addTemplateToSaved('${key}')">+ Add</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ---- program rotation ---- */
+function renderRotationCard(){
+  const r = state.data.programRotation;
+  const saved = state.data.savedPrograms || [];
+  if(r && r.enabled){
+    const activeId = currentRotationProgramId();
+    const activeSp = saved.find(p=>p.id===activeId);
+    const next = nextRotationDate();
+    return `
+      <div class="card">
+        <div class="card-title">Program Rotation</div>
+        <div class="list-row-sub" style="margin-bottom:10px; line-height:1.5;">Rotating every ${r.intervalWeeks} week${r.intervalWeeks===1?'':'s'} between ${r.programIds.length} programs.<br>Currently: <strong style="color:var(--text);">${activeSp?escapeHtml(activeSp.name):'—'}</strong><br>Next rotation: ${next?prettyDate(next):'—'}</div>
+        <button class="btn btn-danger btn-block" onclick="stopRotation()">Stop Rotation</button>
+      </div>
+    `;
+  }
+  if(saved.length < 2){
+    return `
+      <div class="card">
+        <div class="card-title">Program Rotation</div>
+        <div class="list-row-sub">Save at least 2 programs above first, then come back here to auto-rotate between them.</div>
+      </div>
+    `;
+  }
+  return `
+    <div class="card">
+      <div class="card-title">Program Rotation</div>
+      <div class="list-row-sub" style="margin-bottom:8px;">Pick 2+ saved programs to automatically cycle through — e.g. alternate in-season and off-season blocks.</div>
+      ${saved.map(sp=>`
+        <label style="display:flex; align-items:center; gap:8px; padding:6px 0;">
+          <input type="checkbox" class="rotation-check" value="${sp.id}" style="width:18px;height:18px; flex-shrink:0;">
+          <span style="font-size:13px;">${escapeHtml(sp.name)}</span>
+        </label>
+      `).join('')}
+      <label class="field-label">Rotate Every</label>
+      <div class="pill-row" style="margin-bottom:10px;">
+        ${[1,2,3,4,6,8].map(n=>`<div class="pill ${state.rotationIntervalDraft===n?'active':''}" onclick="selectRotationInterval(${n})">${n} wk${n===1?'':'s'}</div>`).join('')}
+      </div>
+      <button class="btn btn-secondary btn-block" onclick="startRotation()">🔁 Start Rotation</button>
+    </div>
+  `;
 }
 
 /* ---- saved programs ---- */
@@ -1917,6 +2282,132 @@ async function forceUpdate(){
 }
 
 /* ---- backup / import / reset ---- */
+/* ---------------- Shareable PR Card ---------------- */
+async function ensureFontsLoaded(){
+  try{
+    await Promise.all([
+      document.fonts.load('700 60px Oswald'),
+      document.fonts.load('700 34px Oswald'),
+      document.fonts.load('700 150px "IBM Plex Mono"'),
+      document.fonts.load('500 36px "IBM Plex Mono"'),
+      document.fonts.load('600 28px "IBM Plex Sans"'),
+    ]);
+  }catch(e){ /* fonts may not be ready — canvas will fall back to system font */ }
+}
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '';
+  const lines = [];
+  for(const word of words){
+    const test = line ? line+' '+word : word;
+    if(ctx.measureText(test).width > maxWidth && line){
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if(line) lines.push(line);
+  lines.forEach((l,i)=> ctx.fillText(l, x, y + i*lineHeight));
+  return lines.length;
+}
+function drawDumbbellMarkCanvas(ctx, x, y, size, color){
+  const s = size/24;
+  ctx.fillStyle = color;
+  function rr(px,py,pw,ph,radius){
+    const rx=x+px*s, ry=y+py*s, rw=pw*s, rh=ph*s;
+    ctx.beginPath();
+    ctx.moveTo(rx+radius, ry);
+    ctx.arcTo(rx+rw, ry, rx+rw, ry+rh, radius);
+    ctx.arcTo(rx+rw, ry+rh, rx, ry+rh, radius);
+    ctx.arcTo(rx, ry+rh, rx, ry, radius);
+    ctx.arcTo(rx, ry, rx+rw, ry, radius);
+    ctx.closePath();
+    ctx.fill();
+  }
+  rr(1,4,4,16,1.4*s);
+  rr(19,4,4,16,1.4*s);
+  rr(5,10.2,14,3.6,1.0*s);
+}
+async function generatePrCardBlob(exName, weight, reps, dateStr, day){
+  await ensureFontsLoaded();
+  const accent = (getComputedStyle(document.documentElement).getPropertyValue('--lime')||'#ff2d12').trim() || '#ff2d12';
+  const W = 1080, H = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 2;
+  for(let i=-H; i<W+H; i+=32){
+    ctx.beginPath();
+    ctx.moveTo(i,0);
+    ctx.lineTo(i+H,H);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = accent;
+  ctx.fillRect(0,0,18,H);
+
+  ctx.fillStyle = accent;
+  ctx.font = '700 34px Oswald, sans-serif';
+  ctx.fillText('PERSONAL RECORD', 80, 130);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 60px Oswald, sans-serif';
+  const nameLines = wrapCanvasText(ctx, exName.toUpperCase(), 80, 220, 920, 68);
+
+  const weightY = 220 + nameLines*68 + 130;
+  ctx.fillStyle = accent;
+  ctx.font = '700 150px "IBM Plex Mono", monospace';
+  ctx.fillText(weight+' LB', 76, weightY);
+
+  ctx.fillStyle = '#9a9a9a';
+  ctx.font = '500 36px "IBM Plex Mono", monospace';
+  ctx.fillText('× '+reps+' reps', 80, weightY+56);
+
+  ctx.fillStyle = '#8f8f8f';
+  ctx.font = '600 28px "IBM Plex Sans", sans-serif';
+  ctx.fillText(prettyDate(dateStr).toUpperCase() + '   ·   DAY '+day, 80, H-90);
+
+  drawDumbbellMarkCanvas(ctx, W-160, H-150, 64, accent);
+
+  return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+async function sharePrCard(exId, weight, reps, dateStr, day){
+  const exName = (state.data.exercises[exId] || {name:exId}).name;
+  showToast('Generating PR card…');
+  let blob;
+  try{
+    blob = await generatePrCardBlob(exName, weight, reps, dateStr, day);
+  }catch(e){
+    showToast('⚠️ Could not generate image');
+    return;
+  }
+  const filename = `pr-${exId}-${dateStr}.png`;
+  try{
+    if(navigator.canShare && navigator.share){
+      const file = new File([blob], filename, {type:'image/png'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'New PR — '+exName});
+        return;
+      }
+    }
+  }catch(e){ /* user cancelled or unsupported — fall through to download */ }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('PR card saved');
+}
+
 async function exportBackup(){
   const json = JSON.stringify(state.data, null, 2);
   const filename = `stayhard-backup-${todayStr()}.json`;
@@ -2092,6 +2583,7 @@ async function boot(){
   if(dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'}).toUpperCase();
   await loadData();
   applyAccentTheme();
+  checkProgramRotation();
   updateTimerDisplay();
   if(state.data.settings.autoOpenNextWorkout){
     state.tab = 'workout';

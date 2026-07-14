@@ -159,6 +159,8 @@ h1,h2,h3,.display{
 .muscle-map{display:block; width:100%; max-width:250px; height:auto; margin:0 auto 16px;}
 .muscle-bar-track{background:var(--bg-card-2); border-radius:999px; height:7px; overflow:hidden;}
 .muscle-bar-fill{height:100%; background:var(--accent); border-radius:999px; transition:width .3s ease;}
+.card-attention{position:relative; padding-left:24px;}
+.card-attention::before{content:''; position:absolute; left:8px; top:16px; bottom:16px; width:4px; border-radius:2px; background:var(--clay);}
 .info-modal{position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;}
 .pose-figure{width:100%; max-width:175px; height:auto; display:block; margin:0 auto;}
 .ex-name-info{font-size:11px; color:var(--accent); text-decoration:underline; text-underline-offset:2px;}
@@ -352,7 +354,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff453a', lime:'#ff453a', court:'#d70015' },
@@ -782,32 +784,63 @@ function drawStickFigureSVG(pose, weightSide, highlight, bench){
   `;
 }
 
-const PROGRAM_TEMPLATES = {
-  standard: {
-    label: 'Power & Serve (Standard 4-Day)',
-    blurb: 'The default balanced split — push, legs, pull, power.',
-    program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
-  },
-  inseason: {
-    label: 'In-Season Maintenance',
-    blurb: 'Lighter, joint-friendly work to maintain strength between matches without burying you.',
-    program: {
-      1: { name:'Shoulder & Serve Care', blurb:'Lighter loads, higher reps — keep the serve arm healthy through the season.', exerciseIds:['sh_press','front_raise','rev_fly','wrist_curl'], supersets:[] },
-      2: { name:'Legs & Movement', blurb:'Maintain lower-body power for court coverage without excess fatigue.', exerciseIds:['goblet_squat','lat_lunge','calf_raise','sl_rdl'], supersets:[] },
-      3: { name:'Core & Stability', blurb:'Rotational strength and single-side stability for injury resilience.', exerciseIds:['russian_twist','woodchop','single_row','arnold_press'], supersets:[] },
-      4: { name:'Light Full-Body Circuit', blurb:'A light full-body touch-up — keep moving without adding real fatigue.', exerciseIds:['thruster','farmers_carry','bicep_curl','tri_ext'], supersets:[] },
-    },
-  },
-  offseason: {
-    label: 'Off-Season Power Builder',
-    blurb: 'Heavier compound focus and more volume for building a stronger base out of season.',
-    program: {
+const PHASE_PROGRAMS = {
+  offseason: [
+    { name:'Off-Season Power Builder', blurb:'Heavier compound focus and more volume for building a stronger base out of season.', program:{
       1: { name:'Heavy Push', blurb:'Build raw pressing strength for a bigger, more durable serve.', exerciseIds:['inc_press','sh_press','push_press','tri_ext'], supersets:[] },
       2: { name:'Heavy Legs', blurb:'Build the lower-body base that everything on court gets driven from.', exerciseIds:['goblet_squat','rdl','walk_lunge','step_up'], supersets:[] },
       3: { name:'Heavy Pull', blurb:'Balance out all the pressing work and build a resilient upper back.', exerciseIds:['bent_row','single_row','rev_fly','bicep_curl'], supersets:[] },
       4: { name:'Explosive Power', blurb:'Full-body power work to convert new strength into court speed.', exerciseIds:['thruster','farmers_carry','renegade_row','arnold_press'], supersets:[] },
-    },
-  },
+    }},
+    { name:'Off-Season Volume Build', blurb:'Same off-season goal, a fresh exercise mix to keep progress moving and stay motivated.', program:{
+      1: { name:'Push Volume', blurb:'Higher-volume pressing work for size and shoulder resilience.', exerciseIds:['sh_press','inc_press','lat_raise','tri_ext','front_raise'], supersets:[] },
+      2: { name:'Leg Volume', blurb:'More total leg work to build a bigger base for court movement.', exerciseIds:['goblet_squat','lat_lunge','step_up','calf_raise'], supersets:[] },
+      3: { name:'Pull Volume', blurb:'Extra back and arm volume to balance out all the pressing.', exerciseIds:['bent_row','single_row','renegade_row','bicep_curl'], supersets:[] },
+      4: { name:'Power Circuit', blurb:'Full-body circuit work to cap off the week.', exerciseIds:['thruster','farmers_carry','arnold_press','woodchop'], supersets:[] },
+    }},
+  ],
+  preseason: [
+    { name:'Pre-Season Power & Speed', blurb:'Sharpen explosiveness and serve power before matches start.', program:{
+      1: { name:'Explosive Upper', blurb:'Fast, powerful pressing to sharpen serve and overhead speed.', exerciseIds:['push_press','arnold_press','lat_raise','tri_ext'], supersets:[] },
+      2: { name:'Explosive Lower', blurb:'Power-focused leg work for faster first-step court movement.', exerciseIds:['thruster','walk_lunge','step_up','calf_raise'], supersets:[] },
+      3: { name:'Rotational Power', blurb:'Build the rotational speed behind your forehand and backhand.', exerciseIds:['woodchop','russian_twist','single_row','bicep_curl'], supersets:[] },
+      4: { name:'Full-Body Speed', blurb:'Tie it all together with full-body speed and stability work.', exerciseIds:['farmers_carry','renegade_row','sh_press','sl_rdl'], supersets:[] },
+    }},
+    { name:'Pre-Season Court Prep', blurb:'Same pre-season intent, a different mix to keep sharpening speed and power.', program:{
+      1: { name:'Serve Power', blurb:'Direct serve-power carryover through pressing and raises.', exerciseIds:['sh_press','push_press','front_raise','tri_ext'], supersets:[] },
+      2: { name:'Movement Prep', blurb:'Lateral and single-leg work that mirrors real court movement.', exerciseIds:['lat_lunge','step_up','sl_rdl','calf_raise'], supersets:[] },
+      3: { name:'Core & Rotation', blurb:'Rotational core strength for stroke power.', exerciseIds:['woodchop','russian_twist','bent_row','arnold_press'], supersets:[] },
+      4: { name:'Explosive Circuit', blurb:'A fast, powerful circuit to finish the week sharp.', exerciseIds:['thruster','farmers_carry','renegade_row','bicep_curl'], supersets:[] },
+    }},
+  ],
+  inseason: [
+    { name:'In-Season Maintenance', blurb:'Lighter, joint-friendly work to maintain strength between matches without burying you.', program:{
+      1: { name:'Shoulder & Serve Care', blurb:'Lighter loads, higher reps — keep the serve arm healthy through the season.', exerciseIds:['sh_press','front_raise','rev_fly','wrist_curl'], supersets:[] },
+      2: { name:'Legs & Movement', blurb:'Maintain lower-body power for court coverage without excess fatigue.', exerciseIds:['goblet_squat','lat_lunge','calf_raise','sl_rdl'], supersets:[] },
+      3: { name:'Core & Stability', blurb:'Rotational strength and single-side stability for injury resilience.', exerciseIds:['russian_twist','woodchop','single_row','arnold_press'], supersets:[] },
+      4: { name:'Light Full-Body Circuit', blurb:'A light full-body touch-up — keep moving without adding real fatigue.', exerciseIds:['thruster','farmers_carry','bicep_curl','tri_ext'], supersets:[] },
+    }},
+    { name:'In-Season Balance', blurb:'Same maintenance goal, a different mix to keep things fresh mid-season.', program:{
+      1: { name:'Upper Maintenance', blurb:'Keep upper-body strength topped up without excess fatigue.', exerciseIds:['sh_press','bent_row','lat_raise','wrist_curl'], supersets:[] },
+      2: { name:'Lower Maintenance', blurb:'Keep the legs sharp for court movement between matches.', exerciseIds:['goblet_squat','step_up','calf_raise','sl_rdl'], supersets:[] },
+      3: { name:'Rotational Care', blurb:'Light rotational work to protect the core and back.', exerciseIds:['woodchop','russian_twist','rev_fly','bicep_curl'], supersets:[] },
+      4: { name:'Light Power Touch', blurb:'A light power touch-up without digging a recovery hole.', exerciseIds:['farmers_carry','arnold_press','single_row','tri_ext'], supersets:[] },
+    }},
+  ],
+  recovery: [
+    { name:'Recovery & Mobility', blurb:'Lighter loads and more mobility to stay healthy and pain-free.', program:{
+      1: { name:'Gentle Upper', blurb:'Light shoulder and arm work to stay moving without strain.', exerciseIds:['front_raise','lat_raise','wrist_curl','bicep_curl'], supersets:[] },
+      2: { name:'Gentle Lower', blurb:'Light leg work to keep blood flowing without adding fatigue.', exerciseIds:['goblet_squat','calf_raise','sl_rdl','step_up'], supersets:[] },
+      3: { name:'Core & Breath', blurb:'Slow, controlled core work to reset and recover.', exerciseIds:['russian_twist','woodchop','rev_fly','tri_ext'], supersets:[] },
+      4: { name:'Light Circuit', blurb:'An easy full-body circuit to close out the week.', exerciseIds:['farmers_carry','single_row','arnold_press','wrist_curl'], supersets:[] },
+    }},
+    { name:'Recovery Light Circuit', blurb:'Same recovery intent, a different light mix for variety.', program:{
+      1: { name:'Light Push/Pull', blurb:'Easy pressing and pulling to stay moving.', exerciseIds:['sh_press','bent_row','front_raise','tri_ext'], supersets:[] },
+      2: { name:'Light Legs', blurb:'Easy leg work to keep things loose.', exerciseIds:['lat_lunge','calf_raise','goblet_squat','sl_rdl'], supersets:[] },
+      3: { name:'Light Core', blurb:'Gentle rotational and grip work.', exerciseIds:['woodchop','russian_twist','wrist_curl','bicep_curl'], supersets:[] },
+      4: { name:'Easy Full-Body', blurb:'A relaxed full-body finish.', exerciseIds:['farmers_carry','rev_fly','arnold_press','step_up'], supersets:[] },
+    }},
+  ],
 };
 
 const STRETCHES_BY_DAY = {
@@ -909,7 +942,9 @@ let state = {
   calMonth: new Date().getMonth(),
   calSelected: null,
   exerciseInfoOpen: null,
-  rotationIntervalDraft: 4,
+  phaseSelectPending: null,
+  phaseDurationDraft: 6,
+  phaseVaryDraft: 2,
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
   loaded:false,
 };
@@ -1150,128 +1185,113 @@ function currentRotationProgramId(){
   const cycleIndex = Math.floor(weeksElapsed/r.intervalWeeks) % r.programIds.length;
   return r.programIds[cycleIndex];
 }
-function nextRotationDate(){
+function isPhaseEnded(){
   const r = state.data.programRotation;
-  if(!r || !r.enabled) return null;
-  const start = new Date(r.startDate+'T00:00:00');
-  const today = new Date(todayStr()+'T00:00:00');
-  const diffDays = Math.floor((today-start)/86400000);
-  const weeksElapsed = Math.floor(diffDays/7);
-  const cycleWeek = Math.floor(weeksElapsed/r.intervalWeeks);
-  const nextBoundaryDays = (cycleWeek+1) * r.intervalWeeks * 7;
-  return dateToStr(new Date(start.getTime() + nextBoundaryDays*86400000));
-}
-function rotationProgressInfo(){
-  const r = state.data.programRotation;
-  if(!r || !r.enabled) return null;
-  const start = new Date(r.startDate+'T00:00:00');
-  const today = new Date(todayStr()+'T00:00:00');
-  const diffDays = Math.max(0, Math.floor((today-start)/86400000));
-  const intervalDays = r.intervalWeeks*7;
-  const daysIntoCycle = diffDays % intervalDays;
-  const pct = Math.min(100, Math.round((daysIntoCycle/intervalDays)*100));
-  const daysLeft = intervalDays - daysIntoCycle;
-  const currentWeek = Math.floor(daysIntoCycle/7)+1;
-  return {pct, daysLeft, currentWeek, totalWeeks:r.intervalWeeks};
+  return !!(r && r.enabled && r.phaseKey && r.phaseEndDate && todayStr() >= r.phaseEndDate);
 }
 function checkProgramRotation(){
   const r = state.data.programRotation;
   if(!r || !r.enabled) return;
+  if(isPhaseEnded()) return; // wait for the user to decide what's next, don't auto-vary past the end
   const targetId = currentRotationProgramId();
   if(!targetId || targetId === r.lastAppliedProgramId) return;
-  if(r.pendingTarget === targetId) return;
-  r.pendingTarget = targetId;
-  saveData();
-}
-function rotationSwitchNow(programId){
-  const r = state.data.programRotation;
-  const sp = (state.data.savedPrograms||[]).find(p=>p.id===programId);
-  if(!sp || !r) return;
-  snapshot();
+  const sp = (state.data.savedPrograms||[]).find(p=>p.id===targetId);
+  if(!sp) return;
   state.data.program = JSON.parse(JSON.stringify(sp.program));
   state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(sp.exercises))};
-  r.lastAppliedProgramId = programId;
-  r.pendingTarget = null;
+  r.lastAppliedProgramId = targetId;
   saveData();
-  showToast(`🔁 Switched to "${sp.name}"`, 4500, undoLast);
-  render();
+  showToast(`🔁 Fresh ${SEASON_PHASES[r.phaseKey].label} variation loaded`);
 }
-function rotationSwitchToPicked(){
-  const sel = document.getElementById('rotationAltPick');
-  if(!sel) return;
-  rotationSwitchNow(sel.value);
-}
-function rotationKeepCurrent(){
-  const r = state.data.programRotation;
-  if(!r) return;
-  r.lastAppliedProgramId = r.pendingTarget;
-  r.pendingTarget = null;
-  saveData();
-  showToast('Staying on your current program');
-  render();
-}
-function rotationEndFromPrompt(){
-  const r = state.data.programRotation;
-  if(!r) return;
-  r.enabled = false;
-  r.pendingTarget = null;
-  saveData();
-  showToast('Rotation ended');
-  render();
-}
-function selectRotationInterval(n){
-  state.rotationIntervalDraft = n;
-  render();
-}
-function startRotation(){
-  const checked = Array.from(document.querySelectorAll('.rotation-check:checked')).map(el=>el.value);
-  if(checked.length<2){ showToast('Select at least 2 saved programs'); return; }
-  snapshot();
-  state.data.programRotation = {
-    enabled: true,
-    programIds: checked,
-    intervalWeeks: state.rotationIntervalDraft || 4,
-    startDate: todayStr(),
-    lastAppliedProgramId: null,
-    pendingTarget: null,
-  };
-  const firstSp = state.data.savedPrograms.find(p=>p.id===checked[0]);
-  if(firstSp){
-    state.data.program = JSON.parse(JSON.stringify(firstSp.program));
-    state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(firstSp.exercises))};
-    state.data.programRotation.lastAppliedProgramId = checked[0];
-  }
-  saveData();
-  showToast('Rotation started — progress tracking begins now', 4500, undoLast);
-  render();
-}
-function stopRotation(){
-  if(!confirm('Stop auto-rotating programs? Your current program stays as-is.')) return;
-  state.data.programRotation.enabled = false;
-  saveData();
-  showToast('Rotation stopped');
-  render();
-}
-function addTemplateToSaved(key){
-  const t = PROGRAM_TEMPLATES[key];
-  if(!t) return;
-  const name = window.prompt('Name this saved program:', t.label);
-  if(!name || !name.trim()) return;
-  const exercisesSnapshot = {};
-  Object.values(t.program).forEach(day=>{
+
+/* ---- season phase → program + duration + auto-variation ---- */
+function buildExerciseSnapshotForProgram(program){
+  const snap = {};
+  Object.values(program).forEach(day=>{
     day.exerciseIds.forEach(id=>{
-      exercisesSnapshot[id] = state.data.exercises[id] ? {...state.data.exercises[id]} : (DEFAULT_EXERCISES[id] ? {...DEFAULT_EXERCISES[id]} : {name:id});
+      snap[id] = state.data.exercises[id] ? {...state.data.exercises[id]} : (DEFAULT_EXERCISES[id] ? {...DEFAULT_EXERCISES[id]} : {name:id});
     });
   });
-  state.data.savedPrograms.push({
-    id: uid(),
-    name: name.trim(),
-    program: JSON.parse(JSON.stringify(t.program)),
-    exercises: exercisesSnapshot,
-    createdAt: todayStr(),
+  return snap;
+}
+function pickPhase(key){
+  state.phaseSelectPending = key;
+  state.phaseDurationDraft = 6;
+  state.phaseVaryDraft = 2;
+  render();
+}
+function cancelPhasePick(){
+  state.phaseSelectPending = null;
+  render();
+}
+function setPhaseDuration(n){ state.phaseDurationDraft = n; render(); }
+function setPhaseVary(n){ state.phaseVaryDraft = n; render(); }
+function startSeasonPhase(){
+  const key = state.phaseSelectPending;
+  const variants = PHASE_PROGRAMS[key];
+  if(!key || !variants) return;
+  const durationWeeks = state.phaseDurationDraft || 6;
+  const varyEveryWeeks = state.phaseVaryDraft || 2;
+  snapshot();
+  const ids = variants.map((v,i)=>{
+    const stableId = `phase-${key}-${i}`;
+    let sp = state.data.savedPrograms.find(p=>p.id===stableId);
+    if(!sp){
+      sp = { id:stableId, name:v.name, program: JSON.parse(JSON.stringify(v.program)), exercises: buildExerciseSnapshotForProgram(v.program), createdAt: todayStr() };
+      state.data.savedPrograms.push(sp);
+    } else {
+      sp.program = JSON.parse(JSON.stringify(v.program));
+      sp.exercises = buildExerciseSnapshotForProgram(v.program);
+    }
+    return stableId;
   });
+  const first = state.data.savedPrograms.find(p=>p.id===ids[0]);
+  state.data.program = JSON.parse(JSON.stringify(first.program));
+  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(first.exercises))};
+  const start = todayStr();
+  const endDate = dateToStr(new Date(new Date(start+'T00:00:00').getTime() + durationWeeks*7*86400000));
+  state.data.programRotation = {
+    enabled: true,
+    phaseKey: key,
+    programIds: ids,
+    intervalWeeks: varyEveryWeeks,
+    startDate: start,
+    phaseEndDate: endDate,
+    totalWeeks: durationWeeks,
+    lastAppliedProgramId: ids[0],
+    pendingTarget: null,
+  };
+  state.data.settings.seasonPhase = key;
+  state.phaseSelectPending = null;
   saveData();
-  showToast(`"${name.trim()}" added to Saved Programs`);
+  showToast(`${SEASON_PHASES[key].icon} ${SEASON_PHASES[key].label} started — ${durationWeeks} wks, fresh mix every ${varyEveryWeeks}`, 4500, undoLast);
+  render();
+}
+function phaseProgressInfo(){
+  const r = state.data.programRotation;
+  if(!r || !r.enabled || !r.phaseKey) return null;
+  const start = new Date(r.startDate+'T00:00:00');
+  const today = new Date(todayStr()+'T00:00:00');
+  const totalDays = r.totalWeeks*7;
+  const daysElapsed = Math.max(0, Math.min(totalDays, Math.floor((today-start)/86400000)));
+  const pct = Math.min(100, Math.round((daysElapsed/totalDays)*100));
+  const daysLeft = Math.max(0, totalDays - daysElapsed);
+  const currentWeek = Math.min(r.totalWeeks, Math.floor(daysElapsed/7)+1);
+  return {pct, daysLeft, currentWeek, totalWeeks:r.totalWeeks};
+}
+function endSeasonPhase(){
+  if(!confirm('End your current season phase plan? Your program stays as-is.')) return;
+  state.data.programRotation.enabled = false;
+  saveData();
+  showToast('Season phase plan ended');
+  render();
+}
+function extendSeasonPhase(){
+  const r = state.data.programRotation;
+  if(!r) return;
+  state.phaseSelectPending = r.phaseKey;
+  state.phaseDurationDraft = r.totalWeeks;
+  state.phaseVaryDraft = r.intervalWeeks;
   render();
 }
 
@@ -1342,7 +1362,6 @@ function renderDashboard(){
     </div>
     ${renderRecapCard()}
     ${renderSeasonPhaseCard()}
-    ${renderRotationStatusCard()}
     <div class="card">
       <div class="card-title">Last 12 Weeks</div>
       ${renderHeatmap()}
@@ -1444,54 +1463,74 @@ function renderRecapCard(){
   `;
 }
 function renderSeasonPhaseCard(){
-  const key = state.data.settings.seasonPhase;
-  if(!key) return '';
+  if(state.phaseSelectPending) return renderPhaseDurationPicker();
+  const r = state.data.programRotation;
+  if(r && r.enabled && r.phaseKey){
+    return isPhaseEnded() ? renderPhaseEndedCard() : renderPhaseProgressCard();
+  }
+  return renderPhasePickerPrompt();
+}
+function renderPhasePickerPrompt(){
+  return `
+    <div class="card">
+      <div class="card-title">Season Phase</div>
+      <div class="list-row-sub" style="margin-bottom:10px; line-height:1.5;">Tell the app where you are in your tennis season and it'll set up a matching program automatically — with variety built in as you go.</div>
+      <div class="pill-row" style="margin-bottom:0; flex-wrap:wrap;">
+        ${Object.entries(SEASON_PHASES).map(([k,p])=>`<div class="pill" onclick="pickPhase('${k}')">${p.icon} ${p.label}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+function renderPhaseDurationPicker(){
+  const key = state.phaseSelectPending;
   const p = SEASON_PHASES[key];
   if(!p) return '';
   return `
     <div class="card">
-      <div class="card-title">Season Phase</div>
-      <div style="font-size:15px; font-weight:600;">${p.icon} ${p.label}</div>
-      <div class="list-row-sub" style="margin-top:5px; line-height:1.5;">${p.blurb}</div>
+      <div class="card-title">${p.icon} ${p.label}</div>
+      <div class="list-row-sub" style="margin-bottom:12px; line-height:1.5;">${p.blurb}</div>
+      <label class="field-label" style="margin-top:0;">How Long?</label>
+      <div class="pill-row" style="margin-bottom:12px;">
+        ${[4,6,8,10,12,16].map(n=>`<div class="pill ${state.phaseDurationDraft===n?'active':''}" onclick="setPhaseDuration(${n})">${n} wks</div>`).join('')}
+      </div>
+      <label class="field-label">Vary The Program Every</label>
+      <div class="pill-row" style="margin-bottom:14px;">
+        ${[2,3,4].map(n=>`<div class="pill ${state.phaseVaryDraft===n?'active':''}" onclick="setPhaseVary(${n})">${n} wks</div>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="startSeasonPhase()">Start ${p.label}</button>
+      <button class="btn btn-secondary btn-block" onclick="cancelPhasePick()">Cancel</button>
     </div>
   `;
 }
-function renderRotationDecisionCard(){
+function renderPhaseProgressCard(){
   const r = state.data.programRotation;
-  if(!r || !r.pendingTarget) return '';
-  const suggested = (state.data.savedPrograms||[]).find(p=>p.id===r.pendingTarget);
-  const others = (state.data.savedPrograms||[]).filter(p=>p.id!==r.pendingTarget);
-  return `
-    <div class="card" style="border-color:var(--clay);">
-      <div class="card-title">🔁 Time To Rotate</div>
-      <div class="list-row-sub" style="margin-bottom:12px;">Your rotation schedule suggests switching to <strong style="color:var(--text);">${suggested?escapeHtml(suggested.name):'—'}</strong>. What would you like to do?</div>
-      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="rotationSwitchNow('${r.pendingTarget}')">Switch Now</button>
-      <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" onclick="rotationKeepCurrent()">Not Yet — Stay Here</button>
-      ${others.length ? `
-        <label class="field-label">Or Pick a Different Program</label>
-        <select class="text-input" id="rotationAltPick" style="margin-bottom:8px;">
-          ${others.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
-        </select>
-        <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" onclick="rotationSwitchToPicked()">Switch To Selected</button>
-      ` : ''}
-      <button class="btn btn-danger btn-block" onclick="rotationEndFromPrompt()">End Rotation</button>
-    </div>
-  `;
-}
-function renderRotationStatusCard(){
-  const r = state.data.programRotation;
-  if(!r || !r.enabled) return '';
-  if(r.pendingTarget) return renderRotationDecisionCard();
-  const activeId = currentRotationProgramId();
-  const activeSp = (state.data.savedPrograms||[]).find(p=>p.id===activeId);
-  const info = rotationProgressInfo();
-  if(!info) return '';
+  const p = SEASON_PHASES[r.phaseKey];
+  const activeSp = (state.data.savedPrograms||[]).find(sp=>sp.id===r.lastAppliedProgramId);
+  const info = phaseProgressInfo();
+  if(!p || !info) return '';
   return `
     <div class="card">
-      <div class="card-title">Program Rotation</div>
+      <div class="card-title">${p.icon} ${p.label}</div>
       <div style="font-size:14px; font-weight:600;">${activeSp?escapeHtml(activeSp.name):'—'}</div>
-      <div class="list-row-sub" style="margin:4px 0 8px;">Week ${info.currentWeek} of ${info.totalWeeks} · ${info.daysLeft} day${info.daysLeft===1?'':'s'} until next rotation</div>
+      <div class="list-row-sub" style="margin:4px 0 8px;">Week ${info.currentWeek} of ${info.totalWeeks} · ${info.daysLeft} day${info.daysLeft===1?'':'s'} left in this block · fresh mix every ${r.intervalWeeks} wk${r.intervalWeeks===1?'':'s'}</div>
       <div class="muscle-bar-track"><div class="muscle-bar-fill" style="width:${info.pct}%;"></div></div>
+    </div>
+  `;
+}
+function renderPhaseEndedCard(){
+  const r = state.data.programRotation;
+  const p = SEASON_PHASES[r.phaseKey];
+  if(!p) return '';
+  return `
+    <div class="card card-attention">
+      <div class="card-title">${p.icon} ${p.label} Block Complete</div>
+      <div class="list-row-sub" style="margin-bottom:12px;">Your ${r.totalWeeks}-week block just wrapped up. What's next?</div>
+      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="extendSeasonPhase()">Extend ${p.label}</button>
+      <label class="field-label" style="margin-top:0;">Or Switch Phase</label>
+      <div class="pill-row" style="margin-bottom:10px; flex-wrap:wrap;">
+        ${Object.entries(SEASON_PHASES).filter(([k])=>k!==r.phaseKey).map(([k,pp])=>`<div class="pill" onclick="pickPhase('${k}')">${pp.icon} ${pp.label}</div>`).join('')}
+      </div>
+      <button class="btn btn-danger btn-block" onclick="endSeasonPhase()">End Season Phase Plan</button>
     </div>
   `;
 }
@@ -2271,10 +2310,8 @@ function renderMore(){
       `).join('')}</div>` : `<div class="empty-state">No entries yet.</div>`}
     </div>
 
-    ${renderTemplatesCard()}
+    ${renderSeasonPhaseCard()}
     ${renderProgramsCard()}
-    ${renderRotationCard()}
-    ${renderSeasonPhaseSettingsCard()}
 
     <div class="card">
       <div class="card-title">Equipment</div>
@@ -2543,71 +2580,9 @@ function moveDay(day, dir){
 }
 
 /* ---- tennis program templates ---- */
-function renderTemplatesCard(){
-  return `
-    <div class="card">
-      <div class="card-title">Tennis Program Templates</div>
-      <div class="list-row-sub" style="margin-bottom:10px;">Ready-made tennis-focused splits. Add one to Saved Programs, then optionally rotate between them below.</div>
-      ${Object.entries(PROGRAM_TEMPLATES).map(([key,t])=>`
-        <div class="list-row" style="align-items:flex-start;">
-          <div><div class="list-row-title">${t.label}</div><div class="list-row-sub" style="margin-top:3px; line-height:1.4;">${t.blurb}</div></div>
-          <button class="btn btn-secondary btn-sm" style="flex-shrink:0; margin-left:10px;" onclick="addTemplateToSaved('${key}')">+ Add</button>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-/* ---- program rotation ---- */
-function renderRotationCard(){
-  const r = state.data.programRotation;
-  const saved = state.data.savedPrograms || [];
-  if(r && r.enabled){
-    if(r.pendingTarget) return renderRotationDecisionCard();
-    const activeId = currentRotationProgramId();
-    const activeSp = saved.find(p=>p.id===activeId);
-    const info = rotationProgressInfo();
-    return `
-      <div class="card">
-        <div class="card-title">Program Rotation</div>
-        <div class="list-row-sub" style="margin-bottom:8px;">Rotating every ${r.intervalWeeks} week${r.intervalWeeks===1?'':'s'} between ${r.programIds.length} programs.</div>
-        <div style="font-size:14px; font-weight:600;">${activeSp?escapeHtml(activeSp.name):'—'}</div>
-        <div class="list-row-sub" style="margin:4px 0 8px;">${info ? `Week ${info.currentWeek} of ${info.totalWeeks} · ${info.daysLeft} day${info.daysLeft===1?'':'s'} left` : ''}</div>
-        ${info ? `<div class="muscle-bar-track" style="margin-bottom:14px;"><div class="muscle-bar-fill" style="width:${info.pct}%;"></div></div>` : ''}
-        <button class="btn btn-danger btn-block" onclick="stopRotation()">Stop Rotation</button>
-      </div>
-    `;
-  }
-  if(saved.length < 2){
-    return `
-      <div class="card">
-        <div class="card-title">Program Rotation</div>
-        <div class="list-row-sub">Save at least 2 programs above first, then come back here to auto-rotate between them.</div>
-      </div>
-    `;
-  }
-  return `
-    <div class="card">
-      <div class="card-title">Program Rotation</div>
-      <div class="list-row-sub" style="margin-bottom:8px;">Pick 2+ saved programs to automatically cycle through — e.g. alternate in-season and off-season blocks.</div>
-      ${saved.map(sp=>`
-        <label style="display:flex; align-items:center; gap:8px; padding:6px 0;">
-          <input type="checkbox" class="rotation-check" value="${sp.id}" style="width:18px;height:18px; flex-shrink:0;">
-          <span style="font-size:13px;">${escapeHtml(sp.name)}</span>
-        </label>
-      `).join('')}
-      <label class="field-label">Rotate Every</label>
-      <div class="pill-row" style="margin-bottom:10px;">
-        ${[1,2,3,4,6,8].map(n=>`<div class="pill ${state.rotationIntervalDraft===n?'active':''}" onclick="selectRotationInterval(${n})">${n} wk${n===1?'':'s'}</div>`).join('')}
-      </div>
-      <button class="btn btn-secondary btn-block" onclick="startRotation()">🔁 Start Rotation</button>
-    </div>
-  `;
-}
-
 /* ---- saved programs ---- */
 function renderProgramsCard(){
-  const saved = state.data.savedPrograms || [];
+  const saved = (state.data.savedPrograms || []).filter(p=>!p.id.startsWith('phase-'));
   return `
     <div class="card">
       <div class="card-title">Program</div>
@@ -2663,25 +2638,6 @@ function deleteSavedProgram(id){
 }
 
 /* ---- season phase ---- */
-function renderSeasonPhaseSettingsCard(){
-  const key = state.data.settings.seasonPhase;
-  return `
-    <div class="card">
-      <div class="card-title">Season Phase</div>
-      <div class="list-row-sub" style="margin-bottom:8px;">Prepping for tennis season, not chasing a number — pick where you are right now and get context, not a weight plan.</div>
-      <div class="pill-row" style="margin-bottom:0; flex-wrap:wrap;">
-        ${Object.entries(SEASON_PHASES).map(([k,p])=>`<div class="pill ${key===k?'active':''}" onclick="setSeasonPhase('${k}')">${p.icon} ${p.label}</div>`).join('')}
-        ${key ? `<div class="pill" onclick="setSeasonPhase(null)">Clear</div>` : ''}
-      </div>
-    </div>
-  `;
-}
-function setSeasonPhase(key){
-  state.data.settings.seasonPhase = key;
-  saveData();
-  render();
-}
-
 /* ---- app version / update ---- */
 async function forceUpdate(){
   showToast('Checking for updates…');

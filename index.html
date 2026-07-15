@@ -367,7 +367,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff453a', lime:'#ff453a', court:'#d70015' },
@@ -1217,6 +1217,13 @@ function addWater(oz){
   entry.waterOz = Math.max(0, entry.waterOz + oz);
   saveData();
   render();
+}
+function addCustomWater(){
+  const input = document.getElementById('waterCustomInput');
+  if(!input) return;
+  const oz = Number(input.value);
+  if(!oz || oz<=0){ showToast('Enter an amount in oz'); return; }
+  addWater(oz);
 }
 function resetWater(){
   const entry = todayChecklist();
@@ -2395,7 +2402,7 @@ function renderChecklist(){
       <div class="streak-label">${complete ? '✅ All done today — day streak' : 'Day Streak'}</div>
     </div>
     <div class="card">
-      <div class="card-title">Today's Checklist</div>
+      <div class="card-title">Morning</div>
       <div class="checklist-item ${entry.multivitamin?'done':''}" style="padding:10px 0;" onclick="toggleChecklistItem('multivitamin')">
         <div class="checklist-check">✓</div>
         <div><div class="checklist-name">Multivitamin</div><div class="checklist-sub">4 pills</div></div>
@@ -2405,23 +2412,24 @@ function renderChecklist(){
         <div class="checklist-check">✓</div>
         <div><div class="checklist-name">Creatine</div><div class="checklist-sub">5g</div></div>
       </div>
-      <hr style="border:none; border-top:1px solid var(--line); margin:2px 0;">
+    </div>
+    <div class="card">
+      <div class="card-title">Post-Workout</div>
       <div class="checklist-item ${entry.protein?'done':''}" style="padding:10px 0;" onclick="toggleChecklistItem('protein')">
         <div class="checklist-check">✓</div>
-        <div><div class="checklist-name">Protein Shake</div><div class="checklist-sub">After workout</div></div>
+        <div><div class="checklist-name">Protein Shake</div><div class="checklist-sub">After lift</div></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">Water</div>
+      <div class="card-title">Water — Throughout The Day</div>
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
         <div style="font-size:20px; font-weight:700;" class="mono">${entry.waterOz} <span style="font-size:13px; color:var(--text-dim); font-weight:500;">/ ${target} oz</span></div>
         ${entry.waterOz>=target ? `<span class="tag" style="color:var(--accent); border-color:var(--accent);">✓ Goal hit</span>` : ''}
       </div>
       <div class="muscle-bar-track" style="margin-bottom:14px;"><div class="muscle-bar-fill" style="width:${waterPct}%;"></div></div>
       <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(8)">+8 oz</button>
-        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(16)">+16 oz</button>
-        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(20)">+20 oz</button>
+        <input class="text-input" type="number" inputmode="numeric" id="waterCustomInput" placeholder="Amount in oz" style="flex:1;">
+        <button class="btn btn-primary" style="flex-shrink:0;" onclick="addCustomWater()">Add</button>
       </div>
       <button class="btn btn-secondary btn-block" onclick="resetWater()">Reset Water</button>
       <div class="list-row-sub" style="margin-top:10px; line-height:1.5;">${bw ? `Target is based on your last logged weight (${bw.weight} lb).` : `Using a default 120 oz target — log your bodyweight in More for a number based on you.`}</div>

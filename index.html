@@ -161,6 +161,18 @@ h1,h2,h3,.display{
 .muscle-bar-fill{height:100%; background:var(--accent); border-radius:999px; transition:width .3s ease;}
 .card-attention{position:relative; padding-left:24px;}
 .card-attention::before{content:''; position:absolute; left:8px; top:16px; bottom:16px; width:4px; border-radius:2px; background:var(--clay);}
+.checklist-item{display:flex; align-items:center; gap:14px; cursor:pointer;}
+.checklist-check{
+  width:30px; height:30px; border-radius:50%; border:2px solid var(--bg-card-2);
+  background:var(--bg-card-2);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-size:15px; font-weight:700; color:transparent; transition:all .15s ease;
+}
+.checklist-item.done .checklist-check{background:var(--accent); border-color:var(--accent); color:#fff;}
+.checklist-item:active .checklist-check{transform:scale(0.9);}
+.checklist-name{font-size:15px; font-weight:600;}
+.checklist-sub{font-size:12px; color:var(--text-dim); margin-top:2px;}
+.checklist-item.done .checklist-name{color:var(--text-dim); text-decoration:line-through; text-decoration-color:var(--text-dim);}
 .info-modal{position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;}
 .pose-figure{width:100%; max-width:175px; height:auto; display:block; margin:0 auto;}
 .ex-name-info{font-size:11px; color:var(--accent); text-decoration:underline; text-underline-offset:2px;}
@@ -337,6 +349,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
   <button class="tab-item" data-tab="workout" onclick="switchTab('workout')"><span class="tab-icon">🏋️</span><span class="tab-label">Workout</span></button>
   <button class="tab-item" data-tab="progress" onclick="switchTab('progress')"><span class="tab-icon">📈</span><span class="tab-label">Progress</span></button>
   <button class="tab-item" data-tab="calendar" onclick="switchTab('calendar')"><span class="tab-icon">📅</span><span class="tab-label">Calendar</span></button>
+  <button class="tab-item" data-tab="checklist" onclick="switchTab('checklist')"><span class="tab-icon">✅</span><span class="tab-label">Daily</span></button>
   <button class="tab-item" data-tab="more" onclick="switchTab('more')"><span class="tab-icon">⚙️</span><span class="tab-label">More</span></button>
 </div>
 
@@ -353,8 +366,8 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 --------------------------------------------------------------- */
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
-const TAB_ORDER = ['dashboard','workout','progress','calendar','more'];
-const APP_VERSION = '2.3.0';
+const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
+const APP_VERSION = '2.5.0';
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff453a', lime:'#ff453a', court:'#d70015' },
@@ -673,6 +686,7 @@ function renderExerciseInfoModalRoot(){
   const exId = state.exerciseInfoOpen;
   const name = (state.data.exercises[exId] || {name:exId}).name;
   const tmpl = poseTemplateFor(exId);
+  const muscleGroup = EXERCISE_MUSCLE_MAP[exId] || null;
   root.innerHTML = `
     <div class="info-modal" onclick="if(event.target===this) closeExerciseInfo()">
       <div style="max-width:420px; width:100%;">
@@ -680,14 +694,15 @@ function renderExerciseInfoModalRoot(){
           <div class="quote-attr" style="padding-left:0;">HOW TO PERFORM</div>
           <div style="font-size:21px; font-weight:700; color:#fff; margin-top:4px;">${escapeHtml(name)}</div>
           ${tmpl.bench ? `<div class="tag" style="margin-top:6px;">🪑 Uses a bench</div>` : ''}
+          ${muscleGroup ? `<div class="tag" style="margin-top:6px; margin-left:6px; color:var(--accent); border-color:var(--accent);">🔴 ${muscleGroup}</div>` : ''}
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div style="text-align:center;">
-            ${drawStickFigureSVG(tmpl.start, tmpl.weight, tmpl.highlight, tmpl.bench)}
+            ${drawStickFigureSVG(tmpl.start, tmpl.weight, muscleGroup, tmpl.bench)}
             <div class="tag" style="margin-top:8px;">START</div>
           </div>
           <div style="text-align:center;">
-            ${drawStickFigureSVG(tmpl.end, tmpl.weight, tmpl.highlight, tmpl.bench)}
+            ${drawStickFigureSVG(tmpl.end, tmpl.weight, muscleGroup, tmpl.bench)}
             <div class="tag" style="margin-top:8px;">FINISH</div>
           </div>
         </div>
@@ -715,70 +730,103 @@ function drawBench(type){
   }
   return '';
 }
-function highlightRegion(p, category){
-  const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
-  if(category==='arms'){
-    const mL = mid(p.shoulderL,p.elbowL), mR = mid(p.shoulderR,p.elbowR);
-    const fL = mid(p.elbowL,p.handL), fR = mid(p.elbowR,p.handR);
-    return `
-      <ellipse cx="${mL.x}" cy="${mL.y}" rx="12" ry="18" fill="var(--accent)" fill-opacity="0.55"/>
-      <ellipse cx="${mR.x}" cy="${mR.y}" rx="12" ry="18" fill="var(--accent)" fill-opacity="0.55"/>
-      <ellipse cx="${fL.x}" cy="${fL.y}" rx="9" ry="14" fill="var(--accent)" fill-opacity="0.4"/>
-      <ellipse cx="${fR.x}" cy="${fR.y}" rx="9" ry="14" fill="var(--accent)" fill-opacity="0.4"/>
-    `;
-  }
-  if(category==='legs'){
-    const mL = mid(p.hipL,p.kneeL), mR = mid(p.hipR,p.kneeR);
-    const cL = mid(p.kneeL,p.footL), cR = mid(p.kneeR,p.footR);
-    return `
-      <ellipse cx="${mL.x}" cy="${mL.y}" rx="13" ry="26" fill="var(--accent)" fill-opacity="0.55"/>
-      <ellipse cx="${mR.x}" cy="${mR.y}" rx="13" ry="26" fill="var(--accent)" fill-opacity="0.55"/>
-      <ellipse cx="${cL.x}" cy="${cL.y}" rx="10" ry="16" fill="var(--accent)" fill-opacity="0.4"/>
-      <ellipse cx="${cR.x}" cy="${cR.y}" rx="10" ry="16" fill="var(--accent)" fill-opacity="0.4"/>
-    `;
-  }
-  if(category==='torso'){
-    const cy = (p.neck.y+p.hip.y)/2;
-    const ry = Math.max(20, Math.abs(p.hip.y-p.neck.y)/2 + 8);
-    return `<ellipse cx="${p.hip.x}" cy="${cy}" rx="24" ry="${ry}" fill="var(--accent)" fill-opacity="0.5"/>`;
-  }
-  return '';
+function capsulePath(x1,y1,r1,x2,y2,r2){
+  const dx = x2-x1, dy = y2-y1;
+  const len = Math.sqrt(dx*dx+dy*dy) || 1;
+  const ux = dx/len, uy = dy/len;
+  const px = -uy, py = ux;
+  const p1a = {x:x1+px*r1, y:y1+py*r1}, p1b = {x:x1-px*r1, y:y1-py*r1};
+  const p2a = {x:x2+px*r2, y:y2+py*r2}, p2b = {x:x2-px*r2, y:y2-py*r2};
+  return `M ${p1a.x.toFixed(1)} ${p1a.y.toFixed(1)} L ${p2a.x.toFixed(1)} ${p2a.y.toFixed(1)} A ${r2} ${r2} 0 0 1 ${p2b.x.toFixed(1)} ${p2b.y.toFixed(1)} L ${p1b.x.toFixed(1)} ${p1b.y.toFixed(1)} A ${r1} ${r1} 0 0 1 ${p1a.x.toFixed(1)} ${p1a.y.toFixed(1)} Z`;
 }
-function drawStickFigureSVG(pose, weightSide, highlight, bench){
+function capsuleShape(x1,y1,r1,x2,y2,r2,fill,extra){
+  return `<path d="${capsulePath(x1,y1,r1,x2,y2,r2)}" fill="${fill}" ${extra||''}/>`;
+}
+function highlightRegion(p, group, waist){
+  const accent = 'var(--accent)';
+  if(!group) return '';
+  switch(group){
+    case 'Shoulders':
+      return `<circle cx="${p.shoulderL.x}" cy="${p.shoulderL.y}" r="14" fill="${accent}"/><circle cx="${p.shoulderR.x}" cy="${p.shoulderR.y}" r="14" fill="${accent}"/>`;
+    case 'Chest': {
+      const cy = p.neck.y + (waist.y-p.neck.y)*0.32;
+      return `<ellipse cx="${p.neck.x-14}" cy="${cy}" rx="15" ry="13" fill="${accent}"/><ellipse cx="${p.neck.x+14}" cy="${cy}" rx="15" ry="13" fill="${accent}"/>`;
+    }
+    case 'Biceps':
+      return capsuleShape(p.shoulderL.x,p.shoulderL.y,11,p.elbowL.x,p.elbowL.y,8,accent) +
+             capsuleShape(p.shoulderR.x,p.shoulderR.y,11,p.elbowR.x,p.elbowR.y,8,accent);
+    case 'Triceps':
+      return capsuleShape(p.shoulderL.x-3,p.shoulderL.y+2,9,p.elbowL.x-3,p.elbowL.y,6,accent,'fill-opacity="0.85"') +
+             capsuleShape(p.shoulderR.x+3,p.shoulderR.y+2,9,p.elbowR.x+3,p.elbowR.y,6,accent,'fill-opacity="0.85"');
+    case 'Forearms':
+      return capsuleShape(p.elbowL.x,p.elbowL.y,7,p.handL.x,p.handL.y,5.5,accent) +
+             capsuleShape(p.elbowR.x,p.elbowR.y,7,p.handR.x,p.handR.y,5.5,accent);
+    case 'Back':
+      return capsuleShape(p.neck.x,p.neck.y+6,26,waist.x,waist.y,17,accent,'fill-opacity="0.5"');
+    case 'Core':
+    case 'Obliques':
+      return capsuleShape(waist.x,waist.y,17,p.hip.x,p.hip.y,20,accent,'fill-opacity="0.75"');
+    case 'Quads':
+      return capsuleShape(p.hipL.x,p.hipL.y,15,p.kneeL.x,p.kneeL.y,11,accent) +
+             capsuleShape(p.hipR.x,p.hipR.y,15,p.kneeR.x,p.kneeR.y,11,accent);
+    case 'Hamstrings':
+      return capsuleShape(p.hipL.x,p.hipL.y,15,p.kneeL.x,p.kneeL.y,11,accent,'fill-opacity="0.7"') +
+             capsuleShape(p.hipR.x,p.hipR.y,15,p.kneeR.x,p.kneeR.y,11,accent,'fill-opacity="0.7"');
+    case 'Calves':
+      return capsuleShape(p.kneeL.x,p.kneeL.y,10,p.footL.x,p.footL.y,7,accent) +
+             capsuleShape(p.kneeR.x,p.kneeR.y,10,p.footR.x,p.footR.y,7,accent);
+    default:
+      return '';
+  }
+}
+function drawStickFigureSVG(pose, weightSide, highlightGroup, bench){
   const p = pose;
-  const bodyColor = '#9a9a9e';
-  function line(a,b,w){
-    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${bodyColor}" stroke-width="${w}" stroke-linecap="round"/>`;
-  }
-  function joint(pt,r){
-    return `<circle cx="${pt.x}" cy="${pt.y}" r="${r}" fill="${bodyColor}"/>`;
-  }
+  const bodyColor = '#e4e4e6';
+  const strokeAttr = 'stroke="#00000018" stroke-width="1.5"';
+  const waist = { x:(p.neck.x+p.hip.x)/2, y:(p.neck.y+p.hip.y)/2 };
   function dumbbell(hand){
     return `
-      <rect x="${hand.x-10}" y="${hand.y-3}" width="6" height="6" rx="1.5" fill="var(--accent)"/>
-      <rect x="${hand.x+4}" y="${hand.y-3}" width="6" height="6" rx="1.5" fill="var(--accent)"/>
-      <rect x="${hand.x-5}" y="${hand.y-1.5}" width="10" height="3" rx="1" fill="var(--accent)"/>
+      <ellipse cx="${hand.x-11}" cy="${hand.y}" rx="7" ry="9" fill="#1a1a1a"/>
+      <ellipse cx="${hand.x+11}" cy="${hand.y}" rx="7" ry="9" fill="#1a1a1a"/>
+      <rect x="${hand.x-11}" y="${hand.y-2.5}" width="22" height="5" rx="2" fill="#1a1a1a"/>
+      <circle cx="${hand.x}" cy="${hand.y}" r="3.5" fill="${bodyColor}"/>
     `;
   }
   let handsHtml = '';
   if(weightSide==='both' || weightSide==='left') handsHtml += dumbbell(p.handL);
   if(weightSide==='both' || weightSide==='right') handsHtml += dumbbell(p.handR);
-  const torso = `<polygon points="${p.shoulderL.x},${p.shoulderL.y} ${p.shoulderR.x},${p.shoulderR.y} ${p.hipR.x},${p.hipR.y} ${p.hipL.x},${p.hipL.y}" fill="${bodyColor}"/>`;
+
+  const thighL = capsuleShape(p.hipL.x,p.hipL.y,15,p.kneeL.x,p.kneeL.y,11,bodyColor,strokeAttr);
+  const thighR = capsuleShape(p.hipR.x,p.hipR.y,15,p.kneeR.x,p.kneeR.y,11,bodyColor,strokeAttr);
+  const calfL = capsuleShape(p.kneeL.x,p.kneeL.y,10,p.footL.x,p.footL.y,7,bodyColor,strokeAttr);
+  const calfR = capsuleShape(p.kneeR.x,p.kneeR.y,10,p.footR.x,p.footR.y,7,bodyColor,strokeAttr);
+  const footL = `<ellipse cx="${p.footL.x}" cy="${p.footL.y+4}" rx="9" ry="5" fill="${bodyColor}" ${strokeAttr}/>`;
+  const footR = `<ellipse cx="${p.footR.x}" cy="${p.footR.y+4}" rx="9" ry="5" fill="${bodyColor}" ${strokeAttr}/>`;
+
+  const torsoTop = capsuleShape(p.neck.x, p.neck.y+6, 27, waist.x, waist.y, 17, bodyColor, strokeAttr);
+  const torsoBottom = capsuleShape(waist.x, waist.y, 17, p.hip.x, p.hip.y, 23, bodyColor, strokeAttr);
+  const absLine = `<line x1="${waist.x}" y1="${p.neck.y+14}" x2="${waist.x}" y2="${p.hip.y-4}" stroke="#00000015" stroke-width="2"/>`;
+
+  const neckShape = capsuleShape(p.head.cx, p.head.cy+p.head.r-5, 9, p.neck.x, p.neck.y, 11, bodyColor, strokeAttr);
+
+  const upperArmL = capsuleShape(p.shoulderL.x,p.shoulderL.y,12,p.elbowL.x,p.elbowL.y,8,bodyColor,strokeAttr);
+  const upperArmR = capsuleShape(p.shoulderR.x,p.shoulderR.y,12,p.elbowR.x,p.elbowR.y,8,bodyColor,strokeAttr);
+  const forearmL = capsuleShape(p.elbowL.x,p.elbowL.y,7,p.handL.x,p.handL.y,5.5,bodyColor,strokeAttr);
+  const forearmR = capsuleShape(p.elbowR.x,p.elbowR.y,7,p.handR.x,p.handR.y,5.5,bodyColor,strokeAttr);
+
+  const headShape = `<circle cx="${p.head.cx}" cy="${p.head.cy}" r="${p.head.r}" fill="${bodyColor}" ${strokeAttr}/>`;
+  const highlightHtml = highlightGroup ? highlightRegion(p, highlightGroup, waist) : '';
+
   return `
     <svg viewBox="0 0 200 280" class="pose-figure">
       ${bench ? drawBench(bench) : ''}
-      ${line(p.hipL,p.kneeL,11)}${line(p.kneeL,p.footL,10)}
-      ${line(p.hipR,p.kneeR,11)}${line(p.kneeR,p.footR,10)}
-      ${torso}
-      ${line(p.neck,p.shoulderL,10)}${line(p.neck,p.shoulderR,10)}
-      ${line(p.shoulderL,p.elbowL,9)}${line(p.elbowL,p.handL,8)}
-      ${line(p.shoulderR,p.elbowR,9)}${line(p.elbowR,p.handR,8)}
-      ${joint(p.shoulderL,8)}${joint(p.shoulderR,8)}
-      ${joint(p.elbowL,6)}${joint(p.elbowR,6)}
-      ${joint(p.hipL,7)}${joint(p.hipR,7)}
-      ${joint(p.kneeL,6)}${joint(p.kneeR,6)}
-      <circle cx="${p.head.cx}" cy="${p.head.cy}" r="${p.head.r}" fill="${bodyColor}"/>
-      ${highlight ? highlightRegion(p, highlight) : ''}
+      ${thighL}${thighR}${calfL}${calfR}${footL}${footR}
+      ${torsoBottom}${torsoTop}
+      ${neckShape}
+      ${upperArmL}${forearmL}${upperArmR}${forearmR}
+      ${absLine}
+      ${headShape}
+      ${highlightHtml}
       ${handsHtml}
     </svg>
   `;
@@ -906,6 +954,7 @@ function defaultData(){
     vacations: [],
     savedPrograms: [],
     programRotation: null,
+    dailyChecklist: {},
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
     settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5, seasonPhase:null },
@@ -981,6 +1030,7 @@ async function loadData(){
         vacations: parsed.vacations || [],
         savedPrograms: parsed.savedPrograms || [],
         programRotation: parsed.programRotation || null,
+        dailyChecklist: parsed.dailyChecklist || {},
         settings: {...d.settings, ...(parsed.settings||{})}
       };
     } else {
@@ -1138,6 +1188,60 @@ function computeStreak(){
   }
   return streak;
 }
+/* ---------------- Daily Checklist ---------------- */
+const WATER_MULTIPLIER = 0.6; // oz per lb of bodyweight
+function waterTargetOz(){
+  const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(!bw || !bw.weight) return 120;
+  return Math.round(bw.weight * WATER_MULTIPLIER);
+}
+function todayChecklist(){
+  const d = todayStr();
+  if(!state.data.dailyChecklist[d]){
+    state.data.dailyChecklist[d] = { multivitamin:false, creatine:false, protein:false, waterOz:0 };
+  }
+  return state.data.dailyChecklist[d];
+}
+function isChecklistComplete(entry){
+  if(!entry) return false;
+  return entry.multivitamin && entry.creatine && entry.protein && entry.waterOz >= waterTargetOz();
+}
+function toggleChecklistItem(key){
+  const entry = todayChecklist();
+  entry[key] = !entry[key];
+  saveData();
+  render();
+}
+function addWater(oz){
+  const entry = todayChecklist();
+  entry.waterOz = Math.max(0, entry.waterOz + oz);
+  saveData();
+  render();
+}
+function resetWater(){
+  const entry = todayChecklist();
+  entry.waterOz = 0;
+  saveData();
+  render();
+}
+function checklistStreak(){
+  const dates = Object.keys(state.data.dailyChecklist)
+    .filter(d => isChecklistComplete(state.data.dailyChecklist[d]))
+    .sort().reverse();
+  if(!dates.length) return 0;
+  const today = todayStr();
+  const yest = dateToStr(new Date(Date.now()-86400000));
+  if(dates[0] !== today && dates[0] !== yest) return 0;
+  let streak = 1;
+  let cursor = new Date(dates[0]+'T00:00:00');
+  for(let i=1;i<dates.length;i++){
+    const prevDay = dateToStr(new Date(cursor.getTime()-86400000));
+    if(dates[i]===prevDay){ streak++; cursor = new Date(dates[i]+'T00:00:00'); }
+    else break;
+  }
+  return streak;
+}
+
 function monthlyTotals(year, month){
   const wos = state.data.workouts.filter(w=>{
     const d = new Date(w.date+'T00:00:00');
@@ -1325,6 +1429,7 @@ function render(animDir){
       case 'workout': c.innerHTML = renderWorkout(); break;
       case 'progress': c.innerHTML = renderProgress(); break;
       case 'calendar': c.innerHTML = renderCalendar(); break;
+      case 'checklist': c.innerHTML = renderChecklist(); break;
       case 'more': c.innerHTML = renderMore(); break;
     }
   }
@@ -2273,6 +2378,55 @@ function renderDayDetail(dateStr, byDate){
   wos.forEach(w=>{ html += `Day ${w.day} — ${state.data.program[w.day].name}${(w.prExIds&&w.prExIds.length)?' 🏆':''}<br>`; });
   html += `</div>`;
   return html;
+}
+
+/* ---------------- Daily Checklist tab ---------------- */
+function renderChecklist(){
+  const entry = todayChecklist();
+  const target = waterTargetOz();
+  const waterPct = Math.min(100, Math.round((entry.waterOz/target)*100));
+  const complete = isChecklistComplete(entry);
+  const streak = checklistStreak();
+  const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date))[0];
+
+  return `
+    <div class="streak-hero">
+      <div class="streak-num mono">${streak}</div>
+      <div class="streak-label">${complete ? '✅ All done today — day streak' : 'Day Streak'}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Today's Checklist</div>
+      <div class="checklist-item ${entry.multivitamin?'done':''}" style="padding:10px 0;" onclick="toggleChecklistItem('multivitamin')">
+        <div class="checklist-check">✓</div>
+        <div><div class="checklist-name">Multivitamin</div><div class="checklist-sub">4 pills</div></div>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--line); margin:2px 0;">
+      <div class="checklist-item ${entry.creatine?'done':''}" style="padding:10px 0;" onclick="toggleChecklistItem('creatine')">
+        <div class="checklist-check">✓</div>
+        <div><div class="checklist-name">Creatine</div><div class="checklist-sub">5g</div></div>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--line); margin:2px 0;">
+      <div class="checklist-item ${entry.protein?'done':''}" style="padding:10px 0;" onclick="toggleChecklistItem('protein')">
+        <div class="checklist-check">✓</div>
+        <div><div class="checklist-name">Protein Shake</div><div class="checklist-sub">After workout</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Water</div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+        <div style="font-size:20px; font-weight:700;" class="mono">${entry.waterOz} <span style="font-size:13px; color:var(--text-dim); font-weight:500;">/ ${target} oz</span></div>
+        ${entry.waterOz>=target ? `<span class="tag" style="color:var(--accent); border-color:var(--accent);">✓ Goal hit</span>` : ''}
+      </div>
+      <div class="muscle-bar-track" style="margin-bottom:14px;"><div class="muscle-bar-fill" style="width:${waterPct}%;"></div></div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(8)">+8 oz</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(16)">+16 oz</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="addWater(20)">+20 oz</button>
+      </div>
+      <button class="btn btn-secondary btn-block" onclick="resetWater()">Reset Water</button>
+      <div class="list-row-sub" style="margin-top:10px; line-height:1.5;">${bw ? `Target is based on your last logged weight (${bw.weight} lb).` : `Using a default 120 oz target — log your bodyweight in More for a number based on you.`}</div>
+    </div>
+  `;
 }
 
 /* ---------------- More: bodyweight, programs, season phase, settings ---------------- */

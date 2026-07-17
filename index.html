@@ -374,7 +374,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
-const APP_VERSION = '2.5.1';
+const APP_VERSION = '2.6.0';
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff453a', lime:'#ff453a', court:'#d70015' },
@@ -430,6 +430,12 @@ const DEFAULT_PROGRAM = {
   3: { name:'Pull & Rotational Core', blurb:'Rows and rotation for stroke power and a strong core through impact.', exerciseIds:['bent_row','single_row','rev_fly','woodchop','russian_twist','bicep_curl'], supersets:[] },
   4: { name:'Power & Stability', blurb:'Full-body power and joint stability to move fast and stay injury-free.', exerciseIds:['thruster','sl_rdl','renegade_row','farmers_carry','arnold_press','wrist_curl'], supersets:[] },
 };
+Object.assign(DEFAULT_PROGRAM, {
+  1: { name:'Upper Strength', blurb:'Simple push and pull strength for a stronger, more durable upper body.', exerciseIds:['flat_press','chest_supported_row','sh_press','incline_rev_fly','zottman_curl'], supersets:[] },
+  2: { name:'Lower Body & Movement', blurb:'Build a stable base for hard stops, quick changes of direction, and court coverage.', exerciseIds:['goblet_squat','rdl','bulgarian_split_squat','bench_knee_drive','seated_calf_raise'], supersets:[] },
+  3: { name:'Upper Body & Core', blurb:'Balanced pressing, rowing, shoulder care, and trunk control for tennis.', exerciseIds:['inc_press','single_row','lat_raise','external_rotation','dead_bug_press'], supersets:[] },
+  4: { name:'Full Body & Stability', blurb:'Strength and control without turning the session into an exhausting circuit.', exerciseIds:['hip_thrust','reverse_lunge','farmers_carry','woodchop','wrist_curl'], supersets:[] },
+});
 const DEFAULT_EXERCISES = {
   sh_press:{name:'Dumbbell Shoulder Press'}, inc_press:{name:'Dumbbell Incline Press'},
   push_press:{name:'Dumbbell Push Press (Serve Drive)'}, lat_raise:{name:'Dumbbell Lateral Raise'},
@@ -1080,7 +1086,7 @@ async function loadData(){
       state.data = {
         ...d, ...parsed,
         program: parsed.program || d.program,
-        exercises: parsed.exercises || d.exercises,
+        exercises: {...d.exercises, ...(parsed.exercises||{})},
         vacations: parsed.vacations || [],
         savedPrograms: parsed.savedPrograms || [],
         programRotation: parsed.programRotation || null,
@@ -1092,6 +1098,14 @@ async function loadData(){
     }
   }catch(e){
     state.data = defaultData();
+  }
+  if(!state.data.settings.simplePlanV1){
+    state.data.program = JSON.parse(JSON.stringify(DEFAULT_PROGRAM));
+    state.data.programRotation = null;
+    state.data.savedPrograms = [];
+    state.data.settings.seasonPhase = null;
+    state.data.settings.simplePlanV1 = true;
+    await saveData();
   }
   state.loaded = true;
 }
@@ -1629,6 +1643,7 @@ function renderRecapCard(){
   `;
 }
 function renderSeasonPhaseCard(){
+  return '';
   if(state.phaseSelectPending) return renderPhaseDurationPicker();
   const r = state.data.programRotation;
   if(r && r.enabled && r.phaseKey){
@@ -2529,7 +2544,7 @@ function renderMore(){
     </div>
 
     ${renderSeasonPhaseCard()}
-    ${renderProgramsCard()}
+    ${renderSimplePlanCard()}
 
     <div class="card">
       <div class="card-title">Equipment</div>
@@ -2817,6 +2832,27 @@ function moveDay(day, dir){
 }
 
 /* ---- tennis program templates ---- */
+function renderSimplePlanCard(){
+  return `
+    <div class="card">
+      <div class="card-title">Your Weekly Plan</div>
+      <div class="list-row-sub" style="margin-bottom:12px; line-height:1.45;">Four straightforward sessions. Do them in order, with rest days whenever tennis or recovery calls for one.</div>
+      ${[1,2,3,4].map(day=>`<div class="list-row"><div><div class="list-row-title">Day ${day} · ${escapeHtml(state.data.program[day].name)}</div><div class="list-row-sub">${state.data.program[day].exerciseIds.length} exercises</div></div><button class="btn btn-secondary btn-sm" onclick="goToWorkoutDay(${day})">Open</button></div>`).join('')}
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" onclick="openEditor()">Customize Weekly Plan</button>
+      <button class="btn btn-danger btn-block" style="margin-top:8px;" onclick="restoreRecommendedPlan()">Restore Recommended Plan</button>
+    </div>
+  `;
+}
+function restoreRecommendedPlan(){
+  if(!confirm('Restore the recommended weekly plan? Your workout history will stay intact.')) return;
+  state.data.program = JSON.parse(JSON.stringify(DEFAULT_PROGRAM));
+  state.data.programRotation = null;
+  state.data.savedPrograms = [];
+  state.data.exercises = {...DEFAULT_EXERCISES, ...state.data.exercises};
+  saveData();
+  showToast('Recommended weekly plan restored');
+  render();
+}
 /* ---- saved programs ---- */
 function renderProgramsCard(){
   const saved = (state.data.savedPrograms || []).filter(p=>!p.id.startsWith('phase-'));

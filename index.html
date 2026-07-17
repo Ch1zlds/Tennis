@@ -1680,6 +1680,8 @@ function renderPhaseProgressCard(){
       <div style="font-size:14px; font-weight:600;">${activeSp?escapeHtml(activeSp.name):'—'}</div>
       <div class="list-row-sub" style="margin:4px 0 8px;">Week ${info.currentWeek} of ${info.totalWeeks} · ${info.daysLeft} day${info.daysLeft===1?'':'s'} left in this block · fresh mix every ${r.intervalWeeks} wk${r.intervalWeeks===1?'':'s'}</div>
       <div class="muscle-bar-track"><div class="muscle-bar-fill" style="width:${info.pct}%;"></div></div>
+      <button class="btn btn-danger btn-block" style="margin-top:12px;" onclick="endSeasonPhase()">End Program Now</button>
+      <div class="list-row-sub" style="text-align:center; margin-top:7px;">Keeps your current workout setup and all history.</div>
     </div>
   `;
 }

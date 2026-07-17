@@ -308,6 +308,13 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 .editor-row-btn{width:32px; height:32px; font-size:12px; flex-shrink:0;}
 .uni-check-label{display:flex; align-items:center; gap:3px; font-size:9px; color:var(--text-dim); flex-shrink:0; text-transform:uppercase; font-weight:700;}
 .uni-check-label input{width:14px; height:14px;}
+.guide-hero{background:linear-gradient(145deg,#26262a,#131315); border-radius:var(--radius); padding:14px; margin:12px 0; border:1px solid var(--line);}
+.guide-step{display:grid; grid-template-columns:24px 1fr; gap:9px; align-items:start; margin:10px 0; font-size:13px; line-height:1.35; color:#f1f1f3;}
+.guide-step-num{width:24px;height:24px;border-radius:8px;background:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono';font-size:11px;font-weight:700;color:#fff;}
+.cue-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.cue-box{background:var(--bg-card-2);border-radius:12px;padding:10px;font-size:11px;line-height:1.35;color:var(--text-dim);}
+.cue-box strong{display:block;color:#fff;font-size:11px;margin-bottom:3px;}
+.bank-select{width:100%; margin-top:8px;}
 
 ::-webkit-scrollbar{display:none;}
 </style>
@@ -436,6 +443,17 @@ const DEFAULT_EXERCISES = {
   thruster:{name:'Dumbbell Thruster'}, sl_rdl:{name:'Dumbbell Single-Leg RDL', unilateral:true},
   renegade_row:{name:'Dumbbell Renegade Row', unilateral:true}, farmers_carry:{name:"Dumbbell Farmer's Carry"},
   arnold_press:{name:'Dumbbell Arnold Press'}, wrist_curl:{name:'Dumbbell Wrist Curl (Elbow Guard)'},
+  flat_press:{name:'Dumbbell Flat Bench Press'}, squeeze_press:{name:'Dumbbell Squeeze Press'},
+  db_fly:{name:'Dumbbell Bench Fly'}, pullover:{name:'Dumbbell Pullover'},
+  bulgarian_split_squat:{name:'Dumbbell Bulgarian Split Squat', unilateral:true}, reverse_lunge:{name:'Dumbbell Reverse Lunge', unilateral:true},
+  hip_thrust:{name:'Dumbbell Hip Thrust (Bench)'}, glute_bridge:{name:'Dumbbell Glute Bridge'},
+  seated_calf_raise:{name:'Dumbbell Seated Calf Raise'}, front_foot_split_squat:{name:'Front-Foot-Elevated Split Squat', unilateral:true},
+  chest_supported_row:{name:'Chest-Supported Dumbbell Row'}, db_shrug:{name:'Dumbbell Shrug'},
+  incline_rev_fly:{name:'Incline Dumbbell Reverse Fly'}, db_high_pull:{name:'Dumbbell High Pull'},
+  side_bend:{name:'Dumbbell Side Bend', unilateral:true}, suitcase_carry:{name:'Dumbbell Suitcase Carry', unilateral:true},
+  plank_pullthrough:{name:'Dumbbell Plank Pull-Through', unilateral:true}, dead_bug_press:{name:'Dumbbell Dead Bug Press', unilateral:true},
+  bench_knee_drive:{name:'Dumbbell Step-Up Knee Drive', unilateral:true}, external_rotation:{name:'Side-Lying Dumbbell External Rotation', unilateral:true},
+  incline_y_raise:{name:'Incline Dumbbell Y-Raise'}, zottman_curl:{name:'Dumbbell Zottman Curl'},
 };
 
 const EXERCISE_MUSCLE_MAP = {
@@ -447,6 +465,12 @@ const EXERCISE_MUSCLE_MAP = {
   russian_twist:'Obliques', bicep_curl:'Biceps',
   thruster:'Quads', sl_rdl:'Hamstrings', renegade_row:'Back', farmers_carry:'Core',
   arnold_press:'Shoulders', wrist_curl:'Forearms',
+  flat_press:'Chest', squeeze_press:'Chest', db_fly:'Chest', pullover:'Back',
+  bulgarian_split_squat:'Quads', reverse_lunge:'Quads', hip_thrust:'Hamstrings', glute_bridge:'Hamstrings',
+  seated_calf_raise:'Calves', front_foot_split_squat:'Quads', chest_supported_row:'Back', db_shrug:'Shoulders',
+  incline_rev_fly:'Shoulders', db_high_pull:'Shoulders', side_bend:'Obliques', suitcase_carry:'Core',
+  plank_pullthrough:'Core', dead_bug_press:'Core', bench_knee_drive:'Quads', external_rotation:'Shoulders',
+  incline_y_raise:'Shoulders', zottman_curl:'Biceps',
 };
 
 const BASE_POSE = {
@@ -667,6 +691,32 @@ const EXERCISE_POSE_MAP = {
   bicep_curl:'curl',
   farmers_carry:'carry',
   wrist_curl:'wrist_curl',
+  flat_press:'incline_press', squeeze_press:'incline_press', db_fly:'incline_press', pullover:'incline_press',
+  bulgarian_split_squat:'lunge', reverse_lunge:'lunge', hip_thrust:'squat', glute_bridge:'squat',
+  seated_calf_raise:'calf_raise', front_foot_split_squat:'lunge', chest_supported_row:'row_bench', db_shrug:'raise_lateral',
+  incline_rev_fly:'reverse_fly', db_high_pull:'raise_lateral', side_bend:'twist', suitcase_carry:'carry',
+  plank_pullthrough:'row', dead_bug_press:'press', bench_knee_drive:'lunge', external_rotation:'raise_lateral',
+  incline_y_raise:'reverse_fly', zottman_curl:'curl',
+};
+const GUIDE_TYPES = {
+  press:{setup:'Sit or lie with feet planted and ribs stacked over your pelvis.', path:'Lower the bells with control, then press until your arms are long without forcing the lockout.', cue:'Keep your wrists over your elbows and let your shoulder blades stay set.', avoid:'Flaring the ribs or bouncing the dumbbells off your chest.'},
+  squat:{setup:'Stand tall with feet about shoulder-width apart; brace before the first rep.', path:'Sit down between your hips, then drive the floor away to stand tall.', cue:'Keep a tripod foot: heel, big toe and little toe connected to the floor.', avoid:'Letting knees cave in or losing a neutral, braced torso.'},
+  lunge:{setup:'Take a stable stance and hold the dumbbells quietly at your sides.', path:'Lower under control, then push through the whole front foot to return to balance.', cue:'Keep your pelvis level and your front knee tracking in line with your toes.', avoid:'Using the back leg to bounce up or rushing the balance portion.'},
+  hinge:{setup:'Soften your knees and set the dumbbells close to your thighs.', path:'Send hips back until the hamstrings load, then squeeze your glutes to stand.', cue:'Keep the bells close and imagine closing a car door with your hips.', avoid:'Turning it into a squat or rounding forward to reach lower.'},
+  row:{setup:'Brace one hand or chest on the bench when available; start with a long, neutral spine.', path:'Pull the elbow toward your back pocket, pause, then lower to a long reach.', cue:'Keep the shoulder away from your ear and let the torso stay still.', avoid:'Twisting open, shrugging, or yanking the weight with momentum.'},
+  raise:{setup:'Use a light load and stand tall with a soft bend in the elbows.', path:'Lift only as high as you can control, pause briefly, then lower slowly.', cue:'Move from the shoulder while keeping your neck relaxed and ribs down.', avoid:'Swinging the bells or hiking the shoulders toward your ears.'},
+  core:{setup:'Set a firm, quiet trunk first—exhale slightly and lock the ribs over the pelvis.', path:'Move the dumbbell while keeping your torso and hips as still as the drill allows.', cue:'Use a slow tempo; stability is the goal, not the biggest range of motion.', avoid:'Twisting through the low back or holding your breath.'},
+  carry:{setup:'Stand tall with the dumbbells at your sides and take short, controlled steps.', path:'Walk smoothly for the prescribed distance or time, then set the bells down with control.', cue:'Keep shoulders level and resist leaning toward or away from the load.', avoid:'Taking rushed steps or letting the weights bang against your legs.'},
+  curl:{setup:'Stand tall or sit upright with elbows close to your sides.', path:'Curl without moving the upper arm, squeeze, then lower for a full controlled stretch.', cue:'Keep the wrist neutral and make the lowering phase deliberate.', avoid:'Leaning back or swinging your elbows forward to finish the rep.'},
+};
+const EXERCISE_GUIDE_TYPE = {
+  sh_press:'press',inc_press:'press',push_press:'press',tri_ext:'press',arnold_press:'press',flat_press:'press',squeeze_press:'press',db_fly:'press',pullover:'press',
+  goblet_squat:'squat',thruster:'squat',hip_thrust:'squat',glute_bridge:'squat',calf_raise:'squat',seated_calf_raise:'squat',
+  walk_lunge:'lunge',lat_lunge:'lunge',step_up:'lunge',bulgarian_split_squat:'lunge',reverse_lunge:'lunge',front_foot_split_squat:'lunge',bench_knee_drive:'lunge',
+  rdl:'hinge',sl_rdl:'hinge',bent_row:'row',single_row:'row',renegade_row:'row',chest_supported_row:'row',
+  lat_raise:'raise',front_raise:'raise',rev_fly:'raise',incline_rev_fly:'raise',db_shrug:'raise',db_high_pull:'raise',external_rotation:'raise',incline_y_raise:'raise',wrist_curl:'raise',
+  woodchop:'core',russian_twist:'core',side_bend:'core',plank_pullthrough:'core',dead_bug_press:'core',
+  farmers_carry:'carry',suitcase_carry:'carry',bicep_curl:'curl',zottman_curl:'curl',
 };
 function poseTemplateFor(exId){
   return POSE_TEMPLATES[EXERCISE_POSE_MAP[exId]] || POSE_TEMPLATES.generic;
@@ -687,26 +737,30 @@ function renderExerciseInfoModalRoot(){
   const name = (state.data.exercises[exId] || {name:exId}).name;
   const tmpl = poseTemplateFor(exId);
   const muscleGroup = EXERCISE_MUSCLE_MAP[exId] || null;
+  const guide = GUIDE_TYPES[EXERCISE_GUIDE_TYPE[exId]] || GUIDE_TYPES.press;
   root.innerHTML = `
     <div class="info-modal" onclick="if(event.target===this) closeExerciseInfo()">
       <div style="max-width:420px; width:100%;">
-        <div style="text-align:center; margin-bottom:16px;">
-          <div class="quote-attr" style="padding-left:0;">HOW TO PERFORM</div>
+        <div style="margin-bottom:12px;">
+          <div class="quote-attr" style="padding-left:0;">FORM GUIDE</div>
           <div style="font-size:21px; font-weight:700; color:#fff; margin-top:4px;">${escapeHtml(name)}</div>
+          <div style="font-size:11px; color:var(--text-dim); margin-top:7px;">Equipment: dumbbells${tmpl.bench ? ' and a bench' : ''}</div>
           ${tmpl.bench ? `<div class="tag" style="margin-top:6px;">🪑 Uses a bench</div>` : ''}
           ${muscleGroup ? `<div class="tag" style="margin-top:6px; margin-left:6px; color:var(--accent); border-color:var(--accent);">🔴 ${muscleGroup}</div>` : ''}
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="guide-hero"><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div style="text-align:center;">
             ${drawStickFigureSVG(tmpl.start, tmpl.weight, muscleGroup, tmpl.bench)}
-            <div class="tag" style="margin-top:8px;">START</div>
+            <div class="tag" style="margin-top:6px;">1 · START</div>
           </div>
           <div style="text-align:center;">
             ${drawStickFigureSVG(tmpl.end, tmpl.weight, muscleGroup, tmpl.bench)}
-            <div class="tag" style="margin-top:8px;">FINISH</div>
+            <div class="tag" style="margin-top:6px;">2 · FINISH</div>
           </div>
-        </div>
-        <div class="list-row-sub" style="text-align:center; margin-top:16px; line-height:1.5;">Move smoothly and under control between these two positions for each rep.</div>
+        </div></div>
+        <div class="guide-step"><div class="guide-step-num">1</div><div><strong>Set up</strong><br>${guide.setup}</div></div>
+        <div class="guide-step"><div class="guide-step-num">2</div><div><strong>Move</strong><br>${guide.path}</div></div>
+        <div class="cue-grid"><div class="cue-box"><strong>Coach’s cue</strong>${guide.cue}</div><div class="cue-box"><strong>Watch for</strong>${guide.avoid}</div></div>
         <button class="btn btn-secondary btn-block" style="margin-top:16px;" onclick="closeExerciseInfo()">Close</button>
       </div>
     </div>
@@ -2652,6 +2706,14 @@ function renderEditorDay(day){
         <label class="uni-check-label"><input type="checkbox" id="newExUni-${day}">L/R</label>
         <button class="btn btn-secondary btn-sm" onclick="addExerciseToDay(${day})">+ Add</button>
       </div>
+      <div class="list-row-sub" style="margin-top:12px;">Dumbbell + bench exercise bank</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <select class="text-input bank-select" id="bankEx-${day}">
+          <option value="">Choose a movement to add…</option>
+          ${Object.keys(DEFAULT_EXERCISES).filter(id=>!def.exerciseIds.includes(id)).map(id=>`<option value="${id}">${escapeHtml(DEFAULT_EXERCISES[id].name)}</option>`).join('')}
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="addBankExercise(${day})">Add</button>
+      </div>
       <label class="field-label">Supersets</label>
       <div class="list-row-sub" style="margin-bottom:8px;">Pair two exercises to alternate sets between them instead of doing them back-to-back.</div>
       ${(def.supersets||[]).map((pair,i)=>{
@@ -2671,6 +2733,17 @@ function renderEditorDay(day){
 }
 function updateDayName(day,val){ if(val.trim()) state.data.program[day].name = val; saveData(); }
 function updateDayBlurb(day,val){ state.data.program[day].blurb = val; saveData(); }
+function addBankExercise(day){
+  const el = document.getElementById('bankEx-'+day);
+  const id = el && el.value;
+  if(!id) return showToast('Choose a movement first');
+  if(state.data.program[day].exerciseIds.includes(id)) return showToast('That movement is already in this day');
+  state.data.exercises[id] = {...(state.data.exercises[id] || DEFAULT_EXERCISES[id])};
+  state.data.program[day].exerciseIds.push(id);
+  saveData();
+  showToast('Exercise added');
+  render();
+}
 function addSuperset(day){
   const aEl = document.getElementById('supersetA-'+day);
   const bEl = document.getElementById('supersetB-'+day);

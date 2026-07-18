@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stayhard-cache-v4';
+const CACHE_NAME = 'stayhard-cache-v5';
 const FILES_TO_CACHE = [
   './index.html',
   './manifest.json',

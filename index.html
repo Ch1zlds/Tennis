@@ -72,7 +72,7 @@ h1,h2,h3,.display{
 }
 .brand-sub{font-size:13px; color:var(--text-dim); font-weight:600;}
 .icon-btn{
-  width:36px;height:36px;border-radius:10px;border:none;
+  width:40px;height:40px;border-radius:10px;border:none;
   background:var(--bg-card); color:var(--text); display:flex;align-items:center;justify-content:center;
   font-size:15px; cursor:pointer;
   transition:transform .1s ease, filter .1s ease;
@@ -220,7 +220,8 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
   display:flex; padding:8px 4px calc(8px + var(--safe-bottom));
 }
 .tab-item{
-  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px;
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 1px;
+  min-height:48px;
   color:var(--text-dim); background:none; border:none; font-family:inherit; cursor:pointer;
   position:relative; transition:color .15s ease;
 }
@@ -229,8 +230,8 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
   content:''; position:absolute; top:-9px; left:50%; transform:translateX(-50%);
   width:16px; height:3px; border-radius:0 0 3px 3px; background:var(--accent);
 }
-.tab-icon{font-size:19px; line-height:1;}
-.tab-label{font-size:10px; letter-spacing:0; text-transform:none; font-weight:500;}
+.tab-icon{font-size:18px; line-height:1;}
+.tab-label{font-size:9.5px; letter-spacing:0; text-transform:none; font-weight:500;}
 
 /* calendar */
 .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
@@ -354,6 +355,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 <div class="tabbar" id="tabbar">
   <button class="tab-item" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
   <button class="tab-item" data-tab="workout" onclick="switchTab('workout')"><span class="tab-icon">🏋️</span><span class="tab-label">Workout</span></button>
+  <button class="tab-item" data-tab="tennis" onclick="switchTab('tennis')"><span class="tab-icon">🎾</span><span class="tab-label">Tennis</span></button>
   <button class="tab-item" data-tab="progress" onclick="switchTab('progress')"><span class="tab-icon">📈</span><span class="tab-label">Progress</span></button>
   <button class="tab-item" data-tab="calendar" onclick="switchTab('calendar')"><span class="tab-icon">📅</span><span class="tab-label">Calendar</span></button>
   <button class="tab-item" data-tab="checklist" onclick="switchTab('checklist')"><span class="tab-icon">✅</span><span class="tab-label">Daily</span></button>
@@ -373,8 +375,22 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 --------------------------------------------------------------- */
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
-const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
-const APP_VERSION = '2.6.0';
+const TAB_ORDER = ['dashboard','workout','tennis','progress','calendar','checklist','more'];
+const APP_VERSION = '2.7.0';
+const RELEASE_NOTES = [
+  { version:'2.7.0', date:'2026-07-17', notes:[
+    'New Tennis tab — log matches, practices and hitting sessions, and see your weekly training load and recovery status.',
+    'Every exercise now tells you exactly what to aim for next, like "Last: 25 lb × 10. Aim for 11 reps."',
+    'Redesigned home screen — one clear "Start" button for today\'s session, plus your last session at a glance.',
+    'Backup is easier to trust — the More screen now always shows exactly when you last backed up.',
+    'Removed the old season-phase system in favor of one simple, coherent weekly plan.',
+    'Lots of small polish — clearer wording, bigger buttons, and undo on more actions.',
+  ]},
+  { version:'2.6.0', date:'2026-06-15', notes:[
+    'Improved exercise how-to illustrations with clearer, more anatomical figures.',
+    'General bug fixes and performance improvements.',
+  ]},
+];
 
 const ACCENT_THEMES = {
   red:    { label:'Red',    swatch:'#ff453a', lime:'#ff453a', court:'#d70015' },
@@ -425,17 +441,11 @@ function quoteForToday(){
 }
 
 const DEFAULT_PROGRAM = {
-  1: { name:'Push & Serve Power', blurb:'Shoulders, chest, triceps — the drivers behind your serve and overhead.', exerciseIds:['sh_press','inc_press','push_press','lat_raise','front_raise','tri_ext'], supersets:[] },
-  2: { name:'Legs & Court Movement', blurb:'Squats, lunges and lateral work for split-step power and court coverage.', exerciseIds:['goblet_squat','walk_lunge','lat_lunge','rdl','step_up','calf_raise'], supersets:[] },
-  3: { name:'Pull & Rotational Core', blurb:'Rows and rotation for stroke power and a strong core through impact.', exerciseIds:['bent_row','single_row','rev_fly','woodchop','russian_twist','bicep_curl'], supersets:[] },
-  4: { name:'Power & Stability', blurb:'Full-body power and joint stability to move fast and stay injury-free.', exerciseIds:['thruster','sl_rdl','renegade_row','farmers_carry','arnold_press','wrist_curl'], supersets:[] },
-};
-Object.assign(DEFAULT_PROGRAM, {
   1: { name:'Upper Strength', blurb:'Simple push and pull strength for a stronger, more durable upper body.', exerciseIds:['flat_press','chest_supported_row','sh_press','incline_rev_fly','zottman_curl'], supersets:[] },
   2: { name:'Lower Body & Movement', blurb:'Build a stable base for hard stops, quick changes of direction, and court coverage.', exerciseIds:['goblet_squat','rdl','bulgarian_split_squat','bench_knee_drive','seated_calf_raise'], supersets:[] },
   3: { name:'Upper Body & Core', blurb:'Balanced pressing, rowing, shoulder care, and trunk control for tennis.', exerciseIds:['inc_press','single_row','lat_raise','external_rotation','dead_bug_press'], supersets:[] },
   4: { name:'Full Body & Stability', blurb:'Strength and control without turning the session into an exhausting circuit.', exerciseIds:['hip_thrust','reverse_lunge','farmers_carry','woodchop','wrist_curl'], supersets:[] },
-});
+};
 const DEFAULT_EXERCISES = {
   sh_press:{name:'Dumbbell Shoulder Press'}, inc_press:{name:'Dumbbell Incline Press'},
   push_press:{name:'Dumbbell Push Press (Serve Drive)'}, lat_raise:{name:'Dumbbell Lateral Raise'},
@@ -892,65 +902,6 @@ function drawStickFigureSVG(pose, weightSide, highlightGroup, bench){
   `;
 }
 
-const PHASE_PROGRAMS = {
-  offseason: [
-    { name:'Off-Season Power Builder', blurb:'Heavier compound focus and more volume for building a stronger base out of season.', program:{
-      1: { name:'Heavy Push', blurb:'Build raw pressing strength for a bigger, more durable serve.', exerciseIds:['inc_press','sh_press','push_press','tri_ext'], supersets:[] },
-      2: { name:'Heavy Legs', blurb:'Build the lower-body base that everything on court gets driven from.', exerciseIds:['goblet_squat','rdl','walk_lunge','step_up'], supersets:[] },
-      3: { name:'Heavy Pull', blurb:'Balance out all the pressing work and build a resilient upper back.', exerciseIds:['bent_row','single_row','rev_fly','bicep_curl'], supersets:[] },
-      4: { name:'Explosive Power', blurb:'Full-body power work to convert new strength into court speed.', exerciseIds:['thruster','farmers_carry','renegade_row','arnold_press'], supersets:[] },
-    }},
-    { name:'Off-Season Volume Build', blurb:'Same off-season goal, a fresh exercise mix to keep progress moving and stay motivated.', program:{
-      1: { name:'Push Volume', blurb:'Higher-volume pressing work for size and shoulder resilience.', exerciseIds:['sh_press','inc_press','lat_raise','tri_ext','front_raise'], supersets:[] },
-      2: { name:'Leg Volume', blurb:'More total leg work to build a bigger base for court movement.', exerciseIds:['goblet_squat','lat_lunge','step_up','calf_raise'], supersets:[] },
-      3: { name:'Pull Volume', blurb:'Extra back and arm volume to balance out all the pressing.', exerciseIds:['bent_row','single_row','renegade_row','bicep_curl'], supersets:[] },
-      4: { name:'Power Circuit', blurb:'Full-body circuit work to cap off the week.', exerciseIds:['thruster','farmers_carry','arnold_press','woodchop'], supersets:[] },
-    }},
-  ],
-  preseason: [
-    { name:'Pre-Season Power & Speed', blurb:'Sharpen explosiveness and serve power before matches start.', program:{
-      1: { name:'Explosive Upper', blurb:'Fast, powerful pressing to sharpen serve and overhead speed.', exerciseIds:['push_press','arnold_press','lat_raise','tri_ext'], supersets:[] },
-      2: { name:'Explosive Lower', blurb:'Power-focused leg work for faster first-step court movement.', exerciseIds:['thruster','walk_lunge','step_up','calf_raise'], supersets:[] },
-      3: { name:'Rotational Power', blurb:'Build the rotational speed behind your forehand and backhand.', exerciseIds:['woodchop','russian_twist','single_row','bicep_curl'], supersets:[] },
-      4: { name:'Full-Body Speed', blurb:'Tie it all together with full-body speed and stability work.', exerciseIds:['farmers_carry','renegade_row','sh_press','sl_rdl'], supersets:[] },
-    }},
-    { name:'Pre-Season Court Prep', blurb:'Same pre-season intent, a different mix to keep sharpening speed and power.', program:{
-      1: { name:'Serve Power', blurb:'Direct serve-power carryover through pressing and raises.', exerciseIds:['sh_press','push_press','front_raise','tri_ext'], supersets:[] },
-      2: { name:'Movement Prep', blurb:'Lateral and single-leg work that mirrors real court movement.', exerciseIds:['lat_lunge','step_up','sl_rdl','calf_raise'], supersets:[] },
-      3: { name:'Core & Rotation', blurb:'Rotational core strength for stroke power.', exerciseIds:['woodchop','russian_twist','bent_row','arnold_press'], supersets:[] },
-      4: { name:'Explosive Circuit', blurb:'A fast, powerful circuit to finish the week sharp.', exerciseIds:['thruster','farmers_carry','renegade_row','bicep_curl'], supersets:[] },
-    }},
-  ],
-  inseason: [
-    { name:'In-Season Maintenance', blurb:'Lighter, joint-friendly work to maintain strength between matches without burying you.', program:{
-      1: { name:'Shoulder & Serve Care', blurb:'Lighter loads, higher reps — keep the serve arm healthy through the season.', exerciseIds:['sh_press','front_raise','rev_fly','wrist_curl'], supersets:[] },
-      2: { name:'Legs & Movement', blurb:'Maintain lower-body power for court coverage without excess fatigue.', exerciseIds:['goblet_squat','lat_lunge','calf_raise','sl_rdl'], supersets:[] },
-      3: { name:'Core & Stability', blurb:'Rotational strength and single-side stability for injury resilience.', exerciseIds:['russian_twist','woodchop','single_row','arnold_press'], supersets:[] },
-      4: { name:'Light Full-Body Circuit', blurb:'A light full-body touch-up — keep moving without adding real fatigue.', exerciseIds:['thruster','farmers_carry','bicep_curl','tri_ext'], supersets:[] },
-    }},
-    { name:'In-Season Balance', blurb:'Same maintenance goal, a different mix to keep things fresh mid-season.', program:{
-      1: { name:'Upper Maintenance', blurb:'Keep upper-body strength topped up without excess fatigue.', exerciseIds:['sh_press','bent_row','lat_raise','wrist_curl'], supersets:[] },
-      2: { name:'Lower Maintenance', blurb:'Keep the legs sharp for court movement between matches.', exerciseIds:['goblet_squat','step_up','calf_raise','sl_rdl'], supersets:[] },
-      3: { name:'Rotational Care', blurb:'Light rotational work to protect the core and back.', exerciseIds:['woodchop','russian_twist','rev_fly','bicep_curl'], supersets:[] },
-      4: { name:'Light Power Touch', blurb:'A light power touch-up without digging a recovery hole.', exerciseIds:['farmers_carry','arnold_press','single_row','tri_ext'], supersets:[] },
-    }},
-  ],
-  recovery: [
-    { name:'Recovery & Mobility', blurb:'Lighter loads and more mobility to stay healthy and pain-free.', program:{
-      1: { name:'Gentle Upper', blurb:'Light shoulder and arm work to stay moving without strain.', exerciseIds:['front_raise','lat_raise','wrist_curl','bicep_curl'], supersets:[] },
-      2: { name:'Gentle Lower', blurb:'Light leg work to keep blood flowing without adding fatigue.', exerciseIds:['goblet_squat','calf_raise','sl_rdl','step_up'], supersets:[] },
-      3: { name:'Core & Breath', blurb:'Slow, controlled core work to reset and recover.', exerciseIds:['russian_twist','woodchop','rev_fly','tri_ext'], supersets:[] },
-      4: { name:'Light Circuit', blurb:'An easy full-body circuit to close out the week.', exerciseIds:['farmers_carry','single_row','arnold_press','wrist_curl'], supersets:[] },
-    }},
-    { name:'Recovery Light Circuit', blurb:'Same recovery intent, a different light mix for variety.', program:{
-      1: { name:'Light Push/Pull', blurb:'Easy pressing and pulling to stay moving.', exerciseIds:['sh_press','bent_row','front_raise','tri_ext'], supersets:[] },
-      2: { name:'Light Legs', blurb:'Easy leg work to keep things loose.', exerciseIds:['lat_lunge','calf_raise','goblet_squat','sl_rdl'], supersets:[] },
-      3: { name:'Light Core', blurb:'Gentle rotational and grip work.', exerciseIds:['woodchop','russian_twist','wrist_curl','bicep_curl'], supersets:[] },
-      4: { name:'Easy Full-Body', blurb:'A relaxed full-body finish.', exerciseIds:['farmers_carry','rev_fly','arnold_press','step_up'], supersets:[] },
-    }},
-  ],
-};
-
 const STRETCHES_BY_DAY = {
   1: [
     {name:'Cross-Body Shoulder Stretch', duration:'30s each side', note:'Pull one arm across your chest, holding just above the elbow.'},
@@ -1012,22 +963,14 @@ function defaultData(){
     workouts: [],
     bodyweight: [],
     vacations: [],
-    savedPrograms: [],
-    programRotation: null,
+    tennisSessions: [],
     dailyChecklist: {},
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5, seasonPhase:null },
-    meta: { createdAt: new Date().toISOString() }
+    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5 },
+    meta: { createdAt: new Date().toISOString(), lastSeenVersion: null }
   };
 }
-
-const SEASON_PHASES = {
-  offseason: { label:'Off-Season', icon:'🏗️', blurb:'Build strength and size — this is the time for heavier loads and more volume.' },
-  preseason: { label:'Pre-Season', icon:'⚡', blurb:'Sharpen power and explosiveness — prioritize speed and serve power before matches start.' },
-  inseason:  { label:'In-Season', icon:'🎾', blurb:"Maintain strength while prioritizing recovery between matches — don't bury yourself." },
-  recovery:  { label:'Recovery', icon:'🩹', blurb:'Lighter loads, more mobility — focus on staying healthy and pain-free.' },
-};
 
 let state = {
   data: null,
@@ -1051,9 +994,8 @@ let state = {
   calMonth: new Date().getMonth(),
   calSelected: null,
   exerciseInfoOpen: null,
-  phaseSelectPending: null,
-  phaseDurationDraft: 6,
-  phaseVaryDraft: 2,
+  releaseNotesOpen: false,
+  tennisDraft: { type:'practice', duration:60, intensity:3, notes:'' },
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
   loaded:false,
 };
@@ -1088,10 +1030,10 @@ async function loadData(){
         program: parsed.program || d.program,
         exercises: {...d.exercises, ...(parsed.exercises||{})},
         vacations: parsed.vacations || [],
-        savedPrograms: parsed.savedPrograms || [],
-        programRotation: parsed.programRotation || null,
+        tennisSessions: parsed.tennisSessions || [],
         dailyChecklist: parsed.dailyChecklist || {},
-        settings: {...d.settings, ...(parsed.settings||{})}
+        settings: {...d.settings, ...(parsed.settings||{})},
+        meta: {...d.meta, ...(parsed.meta||{})},
       };
     } else {
       state.data = defaultData();
@@ -1101,9 +1043,6 @@ async function loadData(){
   }
   if(!state.data.settings.simplePlanV1){
     state.data.program = JSON.parse(JSON.stringify(DEFAULT_PROGRAM));
-    state.data.programRotation = null;
-    state.data.savedPrograms = [];
-    state.data.settings.seasonPhase = null;
     state.data.settings.simplePlanV1 = true;
     await saveData();
   }
@@ -1210,6 +1149,25 @@ function suggestedWeight(exId){
   if(!prev || prev.maxWeight<=0) return null;
   const inc = state.data.settings.plateIncrement || 2.5;
   return roundToPlate(prev.maxWeight + inc);
+}
+const PROGRESSION_REP_CEILING = 12;
+const PROGRESSION_REP_RESTART = 8;
+function nextTarget(exId){
+  const prev = previousWeightFor(exId);
+  if(!prev || prev.maxWeight<=0){
+    return { text:'No history yet — log a set today to start tracking your progress.', readyToBump:false };
+  }
+  if(prev.reps < PROGRESSION_REP_CEILING){
+    return {
+      text:`Last: ${prev.maxWeight} lb × ${prev.reps}. Aim for ${prev.reps+1} rep${prev.reps+1===1?'':'s'}.`,
+      readyToBump:false,
+    };
+  }
+  const nextW = suggestedWeight(exId) || prev.maxWeight;
+  return {
+    text:`Last: ${prev.maxWeight} lb × ${prev.reps}. You're ready to go up — aim for ${nextW} lb × ${PROGRESSION_REP_RESTART}.`,
+    readyToBump:true,
+  };
 }
 function workoutDatesSet(){
   return new Set(state.data.workouts.map(w=>w.date));
@@ -1352,125 +1310,85 @@ function nextWorkoutDay(){
   return last>=4 ? 1 : last+1;
 }
 
-/* ---------------- Program Rotation ---------------- */
-function currentRotationProgramId(){
-  const r = state.data.programRotation;
-  if(!r || !r.enabled || !r.programIds || r.programIds.length<2 || !r.startDate) return null;
-  const start = new Date(r.startDate+'T00:00:00');
-  const today = new Date(todayStr()+'T00:00:00');
-  const diffDays = Math.floor((today-start)/86400000);
-  if(diffDays<0) return r.programIds[0];
-  const weeksElapsed = Math.floor(diffDays/7);
-  const cycleIndex = Math.floor(weeksElapsed/r.intervalWeeks) % r.programIds.length;
-  return r.programIds[cycleIndex];
+/* ---------------- Tennis Logging & Training Load ---------------- */
+const TENNIS_TYPES = {
+  match:    { label:'Match',    icon:'🏆' },
+  practice: { label:'Practice', icon:'🎯' },
+  hitting:  { label:'Hitting Session', icon:'🎾' },
+};
+const TENNIS_INTENSITIES = [
+  {v:1, label:'Light'},
+  {v:2, label:'Easy'},
+  {v:3, label:'Moderate'},
+  {v:4, label:'Hard'},
+  {v:5, label:'Max Effort'},
+];
+function tennisSessionLoad(s){
+  // Simplified session-RPE style load: duration (min) x effort (2-10 scale).
+  return (Number(s.duration)||0) * ((Number(s.intensity)||0)*2);
 }
-function isPhaseEnded(){
-  const r = state.data.programRotation;
-  return !!(r && r.enabled && r.phaseKey && r.phaseEndDate && todayStr() >= r.phaseEndDate);
-}
-function checkProgramRotation(){
-  const r = state.data.programRotation;
-  if(!r || !r.enabled) return;
-  if(isPhaseEnded()) return; // wait for the user to decide what's next, don't auto-vary past the end
-  const targetId = currentRotationProgramId();
-  if(!targetId || targetId === r.lastAppliedProgramId) return;
-  const sp = (state.data.savedPrograms||[]).find(p=>p.id===targetId);
-  if(!sp) return;
-  state.data.program = JSON.parse(JSON.stringify(sp.program));
-  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(sp.exercises))};
-  r.lastAppliedProgramId = targetId;
-  saveData();
-  showToast(`🔁 Fresh ${SEASON_PHASES[r.phaseKey].label} variation loaded`);
-}
-
-/* ---- season phase → program + duration + auto-variation ---- */
-function buildExerciseSnapshotForProgram(program){
-  const snap = {};
-  Object.values(program).forEach(day=>{
-    day.exerciseIds.forEach(id=>{
-      snap[id] = state.data.exercises[id] ? {...state.data.exercises[id]} : (DEFAULT_EXERCISES[id] ? {...DEFAULT_EXERCISES[id]} : {name:id});
-    });
-  });
-  return snap;
-}
-function pickPhase(key){
-  state.phaseSelectPending = key;
-  state.phaseDurationDraft = 6;
-  state.phaseVaryDraft = 2;
-  render();
-}
-function cancelPhasePick(){
-  state.phaseSelectPending = null;
-  render();
-}
-function setPhaseDuration(n){ state.phaseDurationDraft = n; render(); }
-function setPhaseVary(n){ state.phaseVaryDraft = n; render(); }
-function startSeasonPhase(){
-  const key = state.phaseSelectPending;
-  const variants = PHASE_PROGRAMS[key];
-  if(!key || !variants) return;
-  const durationWeeks = state.phaseDurationDraft || 6;
-  const varyEveryWeeks = state.phaseVaryDraft || 2;
-  snapshot();
-  const ids = variants.map((v,i)=>{
-    const stableId = `phase-${key}-${i}`;
-    let sp = state.data.savedPrograms.find(p=>p.id===stableId);
-    if(!sp){
-      sp = { id:stableId, name:v.name, program: JSON.parse(JSON.stringify(v.program)), exercises: buildExerciseSnapshotForProgram(v.program), createdAt: todayStr() };
-      state.data.savedPrograms.push(sp);
-    } else {
-      sp.program = JSON.parse(JSON.stringify(v.program));
-      sp.exercises = buildExerciseSnapshotForProgram(v.program);
+function gymLoadForDate(dateStr){
+  let vol = 0;
+  for(const w of state.data.workouts){
+    if(w.date!==dateStr) continue;
+    for(const exId in w.exercises){
+      const ex = w.exercises[exId];
+      const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+      for(const s of allSets){ vol += (Number(s.weight)||0)*(Number(s.reps)||0); }
     }
-    return stableId;
+  }
+  return vol/40; // scaled down to a similar magnitude as tennis session load
+}
+function tennisLoadForDate(dateStr){
+  return (state.data.tennisSessions||[]).filter(s=>s.date===dateStr).reduce((sum,s)=>sum+tennisSessionLoad(s), 0);
+}
+function totalLoadForDate(dateStr){
+  return gymLoadForDate(dateStr) + tennisLoadForDate(dateStr);
+}
+function loadSeries(days){
+  const out = [];
+  for(let i=days-1; i>=0; i--){
+    const d = dateToStr(new Date(Date.now()-i*86400000));
+    out.push({date:d, gym:gymLoadForDate(d), tennis:tennisLoadForDate(d)});
+  }
+  return out;
+}
+function acwrStatus(){
+  const acute = loadSeries(7).reduce((s,d)=>s+d.gym+d.tennis, 0);
+  const chronic28 = loadSeries(28).reduce((s,d)=>s+d.gym+d.tennis, 0);
+  const chronicAvgWeek = chronic28/4;
+  if(chronicAvgWeek < 5) return { ratio:null, label:'Not Enough Data', color:'var(--text-dim)', blurb:'Log a couple weeks of sessions to see a recovery status here.' };
+  const ratio = acute/chronicAvgWeek;
+  if(ratio < 0.75) return { ratio, label:'Fresh', color:'var(--court)', blurb:'Load is well below your recent average — a good window to push harder.' };
+  if(ratio <= 1.3) return { ratio, label:'Balanced', color:'var(--accent)', blurb:'This week\u2019s load is right around your recent average. Good zone to stay in.' };
+  return { ratio, label:'High Load', color:'var(--danger)', blurb:'This week is well above your recent average — prioritize sleep, water, and light recovery days.' };
+}
+function tennisSessionsThisWeek(){
+  const cutoff = dateToStr(new Date(Date.now()-6*86400000));
+  return (state.data.tennisSessions||[]).filter(s=>s.date>=cutoff);
+}
+function logTennisSession(){
+  const d = state.tennisDraft;
+  const duration = Number(d.duration);
+  if(!duration || duration<=0){ showToast('Enter how many minutes you played'); return; }
+  snapshot();
+  state.data.tennisSessions.push({
+    id: uid(), date: todayStr(), type: d.type, duration, intensity: d.intensity, notes: (d.notes||'').trim(),
   });
-  const first = state.data.savedPrograms.find(p=>p.id===ids[0]);
-  state.data.program = JSON.parse(JSON.stringify(first.program));
-  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(first.exercises))};
-  const start = todayStr();
-  const endDate = dateToStr(new Date(new Date(start+'T00:00:00').getTime() + durationWeeks*7*86400000));
-  state.data.programRotation = {
-    enabled: true,
-    phaseKey: key,
-    programIds: ids,
-    intervalWeeks: varyEveryWeeks,
-    startDate: start,
-    phaseEndDate: endDate,
-    totalWeeks: durationWeeks,
-    lastAppliedProgramId: ids[0],
-    pendingTarget: null,
-  };
-  state.data.settings.seasonPhase = key;
-  state.phaseSelectPending = null;
   saveData();
-  showToast(`${SEASON_PHASES[key].icon} ${SEASON_PHASES[key].label} started — ${durationWeeks} wks, fresh mix every ${varyEveryWeeks}`, 4500, undoLast);
+  state.tennisDraft = { type:'practice', duration:60, intensity:3, notes:'' };
+  showToast('Session logged', 4500, undoLast);
   render();
 }
-function phaseProgressInfo(){
-  const r = state.data.programRotation;
-  if(!r || !r.enabled || !r.phaseKey) return null;
-  const start = new Date(r.startDate+'T00:00:00');
-  const today = new Date(todayStr()+'T00:00:00');
-  const totalDays = r.totalWeeks*7;
-  const daysElapsed = Math.max(0, Math.min(totalDays, Math.floor((today-start)/86400000)));
-  const pct = Math.min(100, Math.round((daysElapsed/totalDays)*100));
-  const daysLeft = Math.max(0, totalDays - daysElapsed);
-  const currentWeek = Math.min(r.totalWeeks, Math.floor(daysElapsed/7)+1);
-  return {pct, daysLeft, currentWeek, totalWeeks:r.totalWeeks};
-}
-function endSeasonPhase(){
-  if(!confirm('End your current season phase plan? Your program stays as-is.')) return;
-  state.data.programRotation.enabled = false;
+function deleteTennisSession(id){
+  snapshot();
+  state.data.tennisSessions = state.data.tennisSessions.filter(s=>s.id!==id);
   saveData();
-  showToast('Season phase plan ended');
+  showToast('Session deleted', 4500, undoLast);
   render();
 }
-function extendSeasonPhase(){
-  const r = state.data.programRotation;
-  if(!r) return;
-  state.phaseSelectPending = r.phaseKey;
-  state.phaseDurationDraft = r.totalWeeks;
-  state.phaseVaryDraft = r.intervalWeeks;
+function setTennisDraft(key, val){
+  state.tennisDraft[key] = val;
   render();
 }
 
@@ -1485,6 +1403,7 @@ function switchTab(tab){
   state.editorOpen = false;
   state.summaryOpen = false;
   state.cooldownOpen = false;
+  state.releaseNotesOpen = false;
   render(dir);
   window.scrollTo(0,0);
 }
@@ -1493,15 +1412,17 @@ function render(animDir){
     el.classList.toggle('active', el.dataset.tab===state.tab);
   });
   const c = document.getElementById('content');
-  const isOverlay = state.searchOpen || state.editorOpen || state.summaryOpen || state.cooldownOpen;
+  const isOverlay = state.searchOpen || state.editorOpen || state.summaryOpen || state.cooldownOpen || state.releaseNotesOpen;
   if(state.searchOpen){ c.innerHTML = renderSearch(); }
   else if(state.editorOpen){ c.innerHTML = renderEditor(); }
   else if(state.summaryOpen){ c.innerHTML = renderSummary(); }
   else if(state.cooldownOpen){ c.innerHTML = renderCooldown(); }
+  else if(state.releaseNotesOpen){ c.innerHTML = renderReleaseNotes(); }
   else {
     switch(state.tab){
       case 'dashboard': c.innerHTML = renderDashboard(); break;
       case 'workout': c.innerHTML = renderWorkout(); break;
+      case 'tennis': c.innerHTML = renderTennis(); break;
       case 'progress': c.innerHTML = renderProgress(); break;
       case 'calendar': c.innerHTML = renderCalendar(); break;
       case 'checklist': c.innerHTML = renderChecklist(); break;
@@ -1526,13 +1447,26 @@ function renderDashboard(){
   const mt = monthlyTotals(now.getFullYear(), now.getMonth());
   const recent = [...state.data.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   const pbCount = allExercises().filter(e=>personalBest(e.id)).length;
+  const nextDay = nextWorkoutDay();
+  const nextDef = state.data.program[nextDay];
+  const lastSession = recent[0];
 
   return `
     ${renderQuoteCard()}
     ${shouldShowBackupReminder() ? renderBackupReminder() : ''}
     <div class="streak-hero">
-      <div class="streak-num mono">${streak}</div>
-      <div class="streak-label">${getActiveVacation() ? '🏖️ On Vacation — Streak Frozen' : `Day Workout Streak ${streak>0?'🔥':''}`}</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <div>
+          <div class="streak-label" style="opacity:0.75; margin-top:0;">TODAY</div>
+          <div style="color:#fff; font-size:21px; font-weight:700; line-height:1.2; margin-top:4px;">${escapeHtml(nextDef.name)}</div>
+          <div class="streak-label" style="margin-top:6px;">${lastSession ? `Last session: ${prettyDate(lastSession.date)} — Day ${lastSession.day}` : 'No sessions logged yet'}</div>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div class="streak-num mono" style="font-size:32px;">${streak}</div>
+          <div class="streak-label">${getActiveVacation() ? '🏖️ Frozen' : `day streak ${streak>0?'🔥':''}`}</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px; padding:15px; font-size:15px; background:#fff; color:var(--court);" onclick="goToWorkoutDay(${nextDay})">Start Day ${nextDay} — ${escapeHtml(nextDef.name)}</button>
     </div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num">${state.data.workouts.length}</div><div class="stat-label">Total Workouts</div></div>
@@ -1541,16 +1475,9 @@ function renderDashboard(){
       <div class="stat-box"><div class="stat-num">${pbCount}</div><div class="stat-label">Lifts Tracked</div></div>
     </div>
     ${renderRecapCard()}
-    ${renderSeasonPhaseCard()}
     <div class="card">
       <div class="card-title">Last 12 Weeks</div>
       ${renderHeatmap()}
-    </div>
-    <div class="card">
-      <div class="card-title">Start Today's Session</div>
-      <div class="pill-row" style="margin-bottom:0;">
-        ${[1,2,3,4].map(d=>`<div class="pill" onclick="goToWorkoutDay(${d})">Day ${d}</div>`).join('')}
-      </div>
     </div>
     <div class="card">
       <div class="card-title">Recent Activity</div>
@@ -1562,7 +1489,7 @@ function renderDashboard(){
           </div>
           ${(w.prExIds&&w.prExIds.length)?'<span class="pr-badge">PR</span>':''}
         </div>
-      `).join('') : `<div class="empty-state">No workouts yet — tap a day above to begin.</div>`}
+      `).join('') : `<div class="empty-state">No workouts yet — tap Start above to begin your first session.</div>`}
     </div>
   `;
 }
@@ -1587,6 +1514,14 @@ function renderBackupReminder(){
       </div>
     </div>
   `;
+}
+function lastBackedUpLabel(){
+  const last = state.data.settings.lastExportAt;
+  if(!last) return "You haven't exported a backup file yet.";
+  const days = Math.floor((Date.now()-last)/86400000);
+  if(days<=0) return 'Last backed up today.';
+  if(days===1) return 'Last backed up yesterday.';
+  return `Last backed up ${days} days ago.`;
 }
 function shouldShowBackupReminder(){
   if(state.backupReminderDismissed) return false;
@@ -1639,81 +1574,6 @@ function renderRecapCard(){
         This month: <strong>${mt.count}</strong> workout${mt.count===1?'':'s'}, <strong>${mt.volume.toLocaleString()} lb</strong> lifted.
         ${gain ? `<br>Biggest gain: <strong>${gain.name}</strong> ${gain.gain>=0?'+':''}${gain.gain.toFixed(1)}%.` : ''}
       </div>
-    </div>
-  `;
-}
-function renderSeasonPhaseCard(){
-  return '';
-  if(state.phaseSelectPending) return renderPhaseDurationPicker();
-  const r = state.data.programRotation;
-  if(r && r.enabled && r.phaseKey){
-    return isPhaseEnded() ? renderPhaseEndedCard() : renderPhaseProgressCard();
-  }
-  return renderPhasePickerPrompt();
-}
-function renderPhasePickerPrompt(){
-  return `
-    <div class="card">
-      <div class="card-title">Season Phase</div>
-      <div class="list-row-sub" style="margin-bottom:10px; line-height:1.5;">Tell the app where you are in your tennis season and it'll set up a matching program automatically — with variety built in as you go.</div>
-      <div class="pill-row" style="margin-bottom:0; flex-wrap:wrap;">
-        ${Object.entries(SEASON_PHASES).map(([k,p])=>`<div class="pill" onclick="pickPhase('${k}')">${p.icon} ${p.label}</div>`).join('')}
-      </div>
-    </div>
-  `;
-}
-function renderPhaseDurationPicker(){
-  const key = state.phaseSelectPending;
-  const p = SEASON_PHASES[key];
-  if(!p) return '';
-  return `
-    <div class="card">
-      <div class="card-title">${p.icon} ${p.label}</div>
-      <div class="list-row-sub" style="margin-bottom:12px; line-height:1.5;">${p.blurb}</div>
-      <label class="field-label" style="margin-top:0;">How Long?</label>
-      <div class="pill-row" style="margin-bottom:12px;">
-        ${[4,6,8,10,12,16].map(n=>`<div class="pill ${state.phaseDurationDraft===n?'active':''}" onclick="setPhaseDuration(${n})">${n} wks</div>`).join('')}
-      </div>
-      <label class="field-label">Vary The Program Every</label>
-      <div class="pill-row" style="margin-bottom:14px;">
-        ${[2,3,4].map(n=>`<div class="pill ${state.phaseVaryDraft===n?'active':''}" onclick="setPhaseVary(${n})">${n} wks</div>`).join('')}
-      </div>
-      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="startSeasonPhase()">Start ${p.label}</button>
-      <button class="btn btn-secondary btn-block" onclick="cancelPhasePick()">Cancel</button>
-    </div>
-  `;
-}
-function renderPhaseProgressCard(){
-  const r = state.data.programRotation;
-  const p = SEASON_PHASES[r.phaseKey];
-  const activeSp = (state.data.savedPrograms||[]).find(sp=>sp.id===r.lastAppliedProgramId);
-  const info = phaseProgressInfo();
-  if(!p || !info) return '';
-  return `
-    <div class="card">
-      <div class="card-title">${p.icon} ${p.label}</div>
-      <div style="font-size:14px; font-weight:600;">${activeSp?escapeHtml(activeSp.name):'—'}</div>
-      <div class="list-row-sub" style="margin:4px 0 8px;">Week ${info.currentWeek} of ${info.totalWeeks} · ${info.daysLeft} day${info.daysLeft===1?'':'s'} left in this block · fresh mix every ${r.intervalWeeks} wk${r.intervalWeeks===1?'':'s'}</div>
-      <div class="muscle-bar-track"><div class="muscle-bar-fill" style="width:${info.pct}%;"></div></div>
-      <button class="btn btn-danger btn-block" style="margin-top:12px;" onclick="endSeasonPhase()">End Program Now</button>
-      <div class="list-row-sub" style="text-align:center; margin-top:7px;">Keeps your current workout setup and all history.</div>
-    </div>
-  `;
-}
-function renderPhaseEndedCard(){
-  const r = state.data.programRotation;
-  const p = SEASON_PHASES[r.phaseKey];
-  if(!p) return '';
-  return `
-    <div class="card card-attention">
-      <div class="card-title">${p.icon} ${p.label} Block Complete</div>
-      <div class="list-row-sub" style="margin-bottom:12px;">Your ${r.totalWeeks}-week block just wrapped up. What's next?</div>
-      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="extendSeasonPhase()">Extend ${p.label}</button>
-      <label class="field-label" style="margin-top:0;">Or Switch Phase</label>
-      <div class="pill-row" style="margin-bottom:10px; flex-wrap:wrap;">
-        ${Object.entries(SEASON_PHASES).filter(([k])=>k!==r.phaseKey).map(([k,pp])=>`<div class="pill" onclick="pickPhase('${k}')">${pp.icon} ${pp.label}</div>`).join('')}
-      </div>
-      <button class="btn btn-danger btn-block" onclick="endSeasonPhase()">End Season Phase Plan</button>
     </div>
   `;
 }
@@ -1843,17 +1703,17 @@ function repeatLastWorkout(){
 }
 function renderExerciseCard(ex){
   const isUni = isUnilateralById(ex.id);
-  const prev = previousWeightFor(ex.id);
   const pb = personalBest(ex.id);
   const fw = fourWeeksAgoEntry(ex.id);
-  const sugg = suggestedWeight(ex.id);
+  const target = nextTarget(ex.id);
+  const sugg = target.readyToBump ? suggestedWeight(ex.id) : null;
   const header = `
     <div class="ex-head">
       <div>
         <div class="ex-name" onclick="openExerciseInfo('${ex.id}')">${ex.name}${isUni?' <span class="tag">L/R</span>':''} <span class="ex-name-info">how-to</span></div>
-        <div class="ex-prev">${prev ? `Last: ${prev.maxWeight} lb × ${prev.reps} <span style="opacity:.6;">(${prettyDate(prev.date)})</span>` : 'No history yet'}</div>
+        <div class="ex-prev" style="font-weight:600; color:var(--text);">${escapeHtml(target.text)}</div>
         ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${fw.maxWeight} lb × ${fw.reps}</div>` : ''}
-        ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Suggested ${sugg} lb — tap to apply</span></div>` : ''}
+        ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Apply ${sugg} lb</span></div>` : ''}
       </div>
       ${pb ? `<span class="tag">PB ${pb.maxWeight} lb</span>` : ''}
     </div>
@@ -2508,7 +2368,89 @@ function renderChecklist(){
   `;
 }
 
-/* ---------------- More: bodyweight, programs, season phase, settings ---------------- */
+/* ---------------- Tennis tab ---------------- */
+function renderTennis(){
+  const sessions = [...(state.data.tennisSessions||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const weekSessions = tennisSessionsThisWeek();
+  const weekMinutes = weekSessions.reduce((s,x)=>s+(Number(x.duration)||0),0);
+  const status = acwrStatus();
+  const series = loadSeries(7);
+  const d = state.tennisDraft;
+  return `
+    <div class="card">
+      <div class="card-title">Log A Session</div>
+      <div class="pill-row" style="margin-bottom:10px;">
+        ${Object.entries(TENNIS_TYPES).map(([k,t])=>`<div class="pill ${d.type===k?'active':''}" onclick="setTennisDraft('type','${k}')">${t.icon} ${t.label}</div>`).join('')}
+      </div>
+      <label class="field-label" style="margin-top:0;">Duration (minutes)</label>
+      <input class="text-input" type="number" inputmode="numeric" min="0" step="5" value="${d.duration}" oninput="state.tennisDraft.duration=this.value">
+      <label class="field-label">Effort</label>
+      <div class="pill-row" style="margin-bottom:0;">
+        ${TENNIS_INTENSITIES.map(i=>`<div class="pill ${d.intensity===i.v?'active':''}" onclick="setTennisDraft('intensity',${i.v})">${i.label}</div>`).join('')}
+      </div>
+      <label class="field-label">Notes (optional)</label>
+      <textarea class="notes" style="min-height:50px;" placeholder="Focus areas, how the body felt, opponent..." oninput="state.tennisDraft.notes=this.value">${escapeHtml(d.notes)}</textarea>
+      <button class="btn btn-primary btn-block" style="margin-top:12px; padding:14px;" onclick="logTennisSession()">Log Session</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">This Week's Training Load</div>
+      <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;">
+        <div style="width:10px;height:10px;border-radius:50%; background:${status.color}; flex-shrink:0;"></div>
+        <div style="font-size:15px; font-weight:700;">${status.label}</div>
+      </div>
+      <div class="list-row-sub" style="margin-bottom:12px; line-height:1.5;">${status.blurb}</div>
+      ${renderLoadBarChart(series)}
+      <div class="list-row-sub" style="margin-top:6px; text-align:center;"><span style="color:var(--court);">●</span> Gym &nbsp; <span style="color:var(--accent);">●</span> Tennis</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">${weekSessions.length}</div><div class="stat-label">Sessions This Week</div></div>
+      <div class="stat-box"><div class="stat-num">${weekMinutes}</div><div class="stat-label">Minutes On Court</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Sessions</div>
+      ${sessions.length ? sessions.slice(0,10).map(s=>{
+        const t = TENNIS_TYPES[s.type] || {icon:'🎾', label:'Session'};
+        const eff = (TENNIS_INTENSITIES.find(i=>i.v===s.intensity)||{}).label || '';
+        return `
+        <div class="list-row">
+          <div>
+            <div class="list-row-title">${t.icon} ${t.label}</div>
+            <div class="list-row-sub">${prettyDate(s.date)} · ${s.duration} min${eff?' · '+eff:''}</div>
+            ${s.notes?`<div class="list-row-sub" style="margin-top:2px;">${escapeHtml(s.notes)}</div>`:''}
+          </div>
+          <button class="icon-btn" style="width:36px;height:36px; color:var(--danger); flex-shrink:0;" onclick="deleteTennisSession('${s.id}')" aria-label="Delete session">✕</button>
+        </div>
+      `;
+      }).join('') : `<div class="empty-state">No sessions yet — log a match or practice above to start tracking your weekly load.</div>`}
+    </div>
+    <div style="height:10px;"></div>
+  `;
+}
+function renderLoadBarChart(series){
+  const w=300, h=130, padL=8, padR=8, padT=10, padB=18;
+  const max = Math.max(1, ...series.map(d=>d.gym+d.tennis));
+  const gap = (w-padL-padR)/series.length;
+  const barW = gap*0.55;
+  const bars = series.map((d,i)=>{
+    const usable = h-padT-padB;
+    const gymH = (d.gym/max)*usable;
+    const tennisH = (d.tennis/max)*usable;
+    const x = padL + i*gap + (gap-barW)/2;
+    const yBase = h-padB;
+    const dow = new Date(d.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'})[0];
+    return `
+      <rect x="${x.toFixed(1)}" y="${(yBase-gymH).toFixed(1)}" width="${barW.toFixed(1)}" height="${gymH.toFixed(1)}" fill="var(--court)" rx="2"/>
+      <rect x="${x.toFixed(1)}" y="${(yBase-gymH-tennisH).toFixed(1)}" width="${barW.toFixed(1)}" height="${tennisH.toFixed(1)}" fill="var(--accent)" rx="2"/>
+      <text x="${(x+barW/2).toFixed(1)}" y="${h-3}" text-anchor="middle" font-size="8" fill="var(--text-dim)" font-family="IBM Plex Mono">${dow}</text>
+    `;
+  }).join('');
+  return `<svg width="100%" height="140" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
+}
+
+/* ---------------- More: bodyweight, weekly plan, settings ---------------- */
 function renderMore(){
   const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date));
   const latestBw = bw[0];
@@ -2543,7 +2485,6 @@ function renderMore(){
       `).join('')}</div>` : `<div class="empty-state">No entries yet.</div>`}
     </div>
 
-    ${renderSeasonPhaseCard()}
     ${renderSimplePlanCard()}
 
     <div class="card">
@@ -2571,11 +2512,13 @@ function renderMore(){
     <div class="card">
       <div class="card-title">App</div>
       <div class="list-row-sub" style="margin-bottom:10px;">Version ${APP_VERSION}</div>
+      <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" onclick="openReleaseNotes()">✨ What's New</button>
       <button class="btn btn-secondary btn-block" onclick="forceUpdate()">🔄 Check for Updates</button>
     </div>
 
     <div class="card">
       <div class="card-title">Backup</div>
+      <div class="list-row-sub" style="margin-bottom:10px;">Your data auto-saves on this device after every change. ${lastBackedUpLabel()}</div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary btn-block" onclick="exportBackup()">⬇ Export .json</button>
         <button class="btn btn-secondary btn-block" onclick="document.getElementById('importFile').click()">⬆ Import .json</button>
@@ -2684,7 +2627,7 @@ function closeEditor(){ state.editorOpen = false; render(); }
 function renderEditor(){
   return `
     <div class="card">
-      <div class="card-title">Customize Program</div>
+      <div class="card-title">Edit Weekly Plan</div>
       <div class="list-row-sub">Rename days, reorder days or exercises, add/remove lifts, or flag a lift as single-side (L/R). Removing an exercise keeps its history under Progress (Archived).</div>
     </div>
     ${[1,2,3,4].map(day=>renderEditorDay(day)).join('')}
@@ -2778,8 +2721,10 @@ function addSuperset(day){
   render();
 }
 function removeSuperset(day, idx){
+  snapshot();
   state.data.program[day].supersets.splice(idx,1);
   saveData();
+  showToast('Superset unpaired', 4500, undoLast);
   render();
 }
 function renameExercise(id,val){ if(val.trim()) state.data.exercises[id].name = val; saveData(); }
@@ -2846,72 +2791,47 @@ function renderSimplePlanCard(){
 function restoreRecommendedPlan(){
   if(!confirm('Restore the recommended weekly plan? Your workout history will stay intact.')) return;
   state.data.program = JSON.parse(JSON.stringify(DEFAULT_PROGRAM));
-  state.data.programRotation = null;
-  state.data.savedPrograms = [];
   state.data.exercises = {...DEFAULT_EXERCISES, ...state.data.exercises};
   saveData();
   showToast('Recommended weekly plan restored');
   render();
 }
-/* ---- saved programs ---- */
-function renderProgramsCard(){
-  const saved = (state.data.savedPrograms || []).filter(p=>!p.id.startsWith('phase-'));
+/* ---- release notes ---- */
+function openReleaseNotes(){
+  state.releaseNotesOpen = true;
+  state.searchOpen = false;
+  render();
+}
+function closeReleaseNotes(){
+  state.releaseNotesOpen = false;
+  render();
+}
+function renderReleaseNotes(){
+  const [latest, ...older] = RELEASE_NOTES;
   return `
+    <div class="card quote-card">
+      <div class="quote-text">What's New</div>
+      <div class="quote-attr">Version ${latest.version} · ${prettyDate(latest.date)}</div>
+    </div>
     <div class="card">
-      <div class="card-title">Program</div>
-      <button class="btn btn-secondary btn-block" onclick="openEditor()">✏️ Customize Exercises &amp; Days</button>
-      <button class="btn btn-secondary btn-block" style="margin-top:8px;" onclick="saveCurrentProgram()">💾 Save Current Program As...</button>
-      ${saved.length ? `
-        <label class="field-label">Saved Programs</label>
-        ${saved.map(sp=>`
-          <div class="list-row">
-            <div><div class="list-row-title">${escapeHtml(sp.name)}</div><div class="list-row-sub">Saved ${prettyDate(sp.createdAt)}</div></div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-secondary btn-sm" onclick="loadSavedProgram('${sp.id}')">Load</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteSavedProgram('${sp.id}')">✕</button>
-            </div>
+      <div class="card-title">Updated</div>
+      ${latest.notes.map(n=>`<div class="list-row" style="align-items:flex-start;"><div style="font-size:13.5px; line-height:1.5;">${escapeHtml(n)}</div></div>`).join('')}
+    </div>
+    ${older.length ? `
+      <div class="card">
+        <div class="card-title">Earlier Releases</div>
+        ${older.map(r=>`
+          <div style="margin-bottom:${r===older[older.length-1]?'0':'14px'};">
+            <div style="font-size:13px; font-weight:700;">Version ${r.version} <span style="color:var(--text-dim); font-weight:500;">· ${prettyDate(r.date)}</span></div>
+            ${r.notes.map(n=>`<div class="list-row-sub" style="margin-top:4px; line-height:1.4;">${escapeHtml(n)}</div>`).join('')}
           </div>
         `).join('')}
-      ` : `<div class="list-row-sub" style="margin-top:10px;">Save your current split so you can switch between programs later — like an in-season vs. off-season plan — without losing either. Your workout history is always kept, no matter which program is active.</div>`}
-    </div>
+      </div>
+    ` : ''}
+    <button class="btn btn-primary btn-block" style="padding:15px; font-size:14px;" onclick="closeReleaseNotes()">Got It</button>
+    <div style="height:10px;"></div>
   `;
 }
-function saveCurrentProgram(){
-  const name = window.prompt('Name this program:', 'My Program');
-  if(!name || !name.trim()) return;
-  snapshot();
-  state.data.savedPrograms.push({
-    id: uid(),
-    name: name.trim(),
-    program: JSON.parse(JSON.stringify(state.data.program)),
-    exercises: JSON.parse(JSON.stringify(state.data.exercises)),
-    createdAt: todayStr(),
-  });
-  saveData();
-  showToast('Program saved', 4500, undoLast);
-  render();
-}
-function loadSavedProgram(id){
-  const sp = state.data.savedPrograms.find(p=>p.id===id);
-  if(!sp) return;
-  if(!confirm(`Switch to "${sp.name}"? This replaces your active program. Your workout history stays intact either way.`)) return;
-  snapshot();
-  state.data.program = JSON.parse(JSON.stringify(sp.program));
-  state.data.exercises = {...state.data.exercises, ...JSON.parse(JSON.stringify(sp.exercises))};
-  saveData();
-  showToast(`Loaded "${sp.name}"`, 4500, undoLast);
-  render();
-}
-function deleteSavedProgram(id){
-  snapshot();
-  state.data.savedPrograms = state.data.savedPrograms.filter(p=>p.id!==id);
-  saveData();
-  showToast('Saved program deleted', 4500, undoLast);
-  render();
-}
-
-/* ---- season phase ---- */
-/* ---- app version / update ---- */
 async function forceUpdate(){
   showToast('Checking for updates…');
   try{
@@ -3210,7 +3130,7 @@ document.getElementById('content').addEventListener('touchend', function(e){
   const dx = e.changedTouches[0].clientX - _touchStartX;
   const dy = e.changedTouches[0].clientY - _touchStartY;
   _touchStartX = null;
-  const blocked = state.searchOpen || state.editorOpen || state.summaryOpen || state.cooldownOpen;
+  const blocked = state.searchOpen || state.editorOpen || state.summaryOpen || state.cooldownOpen || state.releaseNotesOpen;
   if(Math.abs(dx)>60 && Math.abs(dy)<50 && !blocked){
     const curIdx = TAB_ORDER.indexOf(state.tab);
     let newIdx = curIdx + (dx<0 ? 1 : -1);
@@ -3231,11 +3151,18 @@ async function boot(){
   if(dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'}).toUpperCase();
   await loadData();
   applyAccentTheme();
-  checkProgramRotation();
   updateTimerDisplay();
   if(state.data.settings.autoOpenNextWorkout){
     state.tab = 'workout';
     state.workoutDay = nextWorkoutDay();
+  }
+  const seen = state.data.meta && state.data.meta.lastSeenVersion;
+  if(seen && seen !== APP_VERSION){
+    state.releaseNotesOpen = true;
+  }
+  if(seen !== APP_VERSION){
+    state.data.meta.lastSeenVersion = APP_VERSION;
+    saveData();
   }
   render();
 }

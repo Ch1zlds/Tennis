@@ -376,8 +376,19 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','tennis','progress','calendar','checklist','more'];
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.9.0';
 const RELEASE_NOTES = [
+  { version:'2.9.0', date:'2026-07-17', notes:[
+    'New Progress charts: total weight lifted per week, workout frequency, and bodyweight — all in one place.',
+    'The muscle heat map now works across your whole history, not just one workout — switch between Last 30 Days, Last 90 Days, or All Time.',
+    'Calendar tab now shows monthly completion % and your best workout month ever.',
+  ]},
+  { version:'2.8.0', date:'2026-07-17', notes:[
+    'Matches now capture opponent, score, and win/loss right in the Tennis tab.',
+    'New "What Could Improve?" tagging on every session — Serve, Backhand, Footwork, and more.',
+    'New Focus Areas card shows your most common improvement tags and recent notes at a glance.',
+    'Fixed an issue where swiping across pill selectors (like Effort) could accidentally change tabs.',
+  ]},
   { version:'2.7.0', date:'2026-07-17', notes:[
     'New Tennis tab — log matches, practices and hitting sessions, and see your weekly training load and recovery status.',
     'Every exercise now tells you exactly what to aim for next, like "Last: 25 lb × 10. Aim for 11 reps."',
@@ -987,6 +998,7 @@ let state = {
   cooldownDay: 1,
   stretchTimers: {},
   chartMode: 'compact',
+  progressMuscleRange: 30,
   expandedIds: new Set(),
   quickAddExId: null,
   backupReminderDismissed: false,
@@ -995,7 +1007,7 @@ let state = {
   calSelected: null,
   exerciseInfoOpen: null,
   releaseNotesOpen: false,
-  tennisDraft: { type:'practice', duration:60, intensity:3, notes:'' },
+  tennisDraft: { type:'practice', duration:60, intensity:3, notes:'', opponent:'', score:'', result:'', improveTags:[], improveNote:'' },
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
   loaded:false,
 };
@@ -1292,6 +1304,43 @@ function monthlyTotals(year, month){
   }
   return { count: wos.length, volume };
 }
+function monthCompletionPct(y,m){
+  const now = new Date();
+  const isCurrentMonth = (y===now.getFullYear() && m===now.getMonth());
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+  const workoutDates = new Set(state.data.workouts.filter(w=>{
+    const d = new Date(w.date+'T00:00:00');
+    return d.getFullYear()===y && d.getMonth()===m;
+  }).map(w=>w.date));
+  const pct = daysElapsed>0 ? Math.min(100, Math.round((workoutDates.size/daysElapsed)*100)) : 0;
+  return { pct, workoutDays:workoutDates.size, daysElapsed };
+}
+function bestWorkoutMonth(){
+  const byMonth = {};
+  for(const w of state.data.workouts){
+    const key = w.date.slice(0,7);
+    if(!byMonth[key]) byMonth[key] = { volume:0, dates:new Set() };
+    byMonth[key].dates.add(w.date);
+    for(const exId in w.exercises){
+      const ex = w.exercises[exId];
+      const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+      for(const s of allSets){ byMonth[key].volume += (Number(s.weight)||0)*(Number(s.reps)||0); }
+    }
+  }
+  let best = null;
+  for(const key in byMonth){
+    const count = byMonth[key].dates.size;
+    const volume = byMonth[key].volume;
+    if(!best || count>best.count || (count===best.count && volume>best.volume)){
+      best = { key, count, volume };
+    }
+  }
+  if(!best) return null;
+  const [y,m] = best.key.split('-').map(Number);
+  const label = new Date(y, m-1, 1).toLocaleDateString('en-US',{month:'long', year:'numeric'});
+  return { label, count:best.count, volume:best.volume };
+}
 function prsThisMonth(){
   const now = new Date();
   let n = 0;
@@ -1323,6 +1372,7 @@ const TENNIS_INTENSITIES = [
   {v:4, label:'Hard'},
   {v:5, label:'Max Effort'},
 ];
+const FOCUS_TAGS = ['Serve','Return','Forehand','Backhand','Net Play','Footwork','Mental Game','Fitness'];
 function tennisSessionLoad(s){
   // Simplified session-RPE style load: duration (min) x effort (2-10 scale).
   return (Number(s.duration)||0) * ((Number(s.intensity)||0)*2);
@@ -1367,6 +1417,17 @@ function tennisSessionsThisWeek(){
   const cutoff = dateToStr(new Date(Date.now()-6*86400000));
   return (state.data.tennisSessions||[]).filter(s=>s.date>=cutoff);
 }
+function toggleImproveTag(tag){
+  const d = state.tennisDraft;
+  d.improveTags = d.improveTags || [];
+  if(d.improveTags.includes(tag)) d.improveTags = d.improveTags.filter(t=>t!==tag);
+  else d.improveTags = [...d.improveTags, tag];
+  render();
+}
+function setMatchResult(val){
+  state.tennisDraft.result = (state.tennisDraft.result===val) ? '' : val;
+  render();
+}
 function logTennisSession(){
   const d = state.tennisDraft;
   const duration = Number(d.duration);
@@ -1374,9 +1435,14 @@ function logTennisSession(){
   snapshot();
   state.data.tennisSessions.push({
     id: uid(), date: todayStr(), type: d.type, duration, intensity: d.intensity, notes: (d.notes||'').trim(),
+    opponent: d.type==='match' ? (d.opponent||'').trim() : '',
+    score: d.type==='match' ? (d.score||'').trim() : '',
+    result: d.type==='match' ? (d.result||'') : '',
+    improveTags: [...(d.improveTags||[])],
+    improveNote: (d.improveNote||'').trim(),
   });
   saveData();
-  state.tennisDraft = { type:'practice', duration:60, intensity:3, notes:'' };
+  state.tennisDraft = { type:'practice', duration:60, intensity:3, notes:'', opponent:'', score:'', result:'', improveTags:[], improveNote:'' };
   showToast('Session logged', 4500, undoLast);
   render();
 }
@@ -1390,6 +1456,20 @@ function deleteTennisSession(id){
 function setTennisDraft(key, val){
   state.tennisDraft[key] = val;
   render();
+}
+function focusAreaStats(days){
+  const cutoff = dateToStr(new Date(Date.now()-(days-1)*86400000));
+  const sessions = (state.data.tennisSessions||[]).filter(s=>s.date>=cutoff);
+  const counts = {};
+  for(const s of sessions){
+    for(const tag of (s.improveTags||[])){ counts[tag] = (counts[tag]||0)+1; }
+  }
+  const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const notes = [...(state.data.tennisSessions||[])]
+    .filter(s=>s.improveNote || (s.improveTags&&s.improveTags.length))
+    .sort((a,b)=>b.date.localeCompare(a.date))
+    .slice(0,8);
+  return { ranked, notes };
 }
 
 /* ---------------- rendering shell ---------------- */
@@ -1900,7 +1980,8 @@ function renderSummary(){
   `;
 }
 let lastHeatmapBreakdown = null;
-function renderMuscleHeatmap(exercisesSnapshot){
+function renderMuscleHeatmap(exercisesSnapshot, title){
+  title = title || 'Muscles Worked';
   if(!exercisesSnapshot) return '';
   const totals = {};
   const exercisesByGroup = {};
@@ -1925,7 +2006,7 @@ function renderMuscleHeatmap(exercisesSnapshot){
 
   return `
     <div class="card">
-      <div class="card-title">Muscles Worked</div>
+      <div class="card-title">${escapeHtml(title)}</div>
       <div class="list-row-sub" style="margin-bottom:10px;">Tap a zone or a muscle below for the breakdown.</div>
       <svg viewBox="0 0 200 300" class="muscle-map">
         <ellipse cx="100" cy="286" rx="65" ry="7" fill="#000" opacity="0.3"/>
@@ -2131,6 +2212,7 @@ function renderProgress(){
   const exs = allExercises().concat(archivedExercises());
   const withPB = exs.filter(e=>personalBest(e.id));
   return `
+    ${renderProgressOverviewCards()}
     <div class="card">
       <div class="card-title">Personal Bests</div>
       ${withPB.length ? withPB.sort((a,b)=>(b.day||0)-(a.day||0) || a.name.localeCompare(b.name)).map(e=>{
@@ -2152,6 +2234,39 @@ function renderProgress(){
       <div style="height:8px;"></div>
       ${exs.map(e=>renderExerciseProgressRow(e)).join('')}
     </div>
+  `;
+}
+function renderProgressOverviewCards(){
+  const volSeries = weeklyVolumeSeries(12);
+  const freqSeries = weeklyFrequencySeries(12);
+  const bw = [...state.data.bodyweight].sort((a,b)=>a.date.localeCompare(b.date));
+  const hasVolume = volSeries.some(d=>d.value>0);
+  const hasFreq = freqSeries.some(d=>d.value>0);
+  const range = state.progressMuscleRange ?? 30;
+  const muscleSnap = buildAggregateExerciseSnapshot(range || null);
+  return `
+    <div class="card">
+      <div class="card-title">Weight Lifted Over Time</div>
+      ${hasVolume ? `
+        ${renderBarChart(volSeries, 'var(--accent)')}
+        <div class="list-row-sub" style="text-align:center; margin-top:4px;">Total volume (lb) by week · last 12 weeks</div>
+      ` : `<div class="empty-state">Complete a few workouts to see your volume trend here.</div>`}
+    </div>
+    <div class="card">
+      <div class="card-title">Workout Frequency</div>
+      ${hasFreq ? `
+        ${renderBarChart(freqSeries, 'var(--court)')}
+        <div class="list-row-sub" style="text-align:center; margin-top:4px;">Workouts per week · last 12 weeks</div>
+      ` : `<div class="empty-state">Log a few workouts to see your frequency here.</div>`}
+    </div>
+    <div class="card">
+      <div class="card-title">Bodyweight Over Time</div>
+      ${bw.length>=2 ? renderLineChart(bw.map(b=>({date:b.date, value:b.weight}))) : `<div class="empty-state">Log at least two bodyweight entries in More to see a trend here.</div>`}
+    </div>
+    <div class="pill-row" style="margin-bottom:0;">
+      ${[30,90,0].map(d=>`<div class="pill ${range===d?'active':''}" onclick="setProgressMuscleRange(${d})">${d===0?'All Time':'Last '+d+' Days'}</div>`).join('')}
+    </div>
+    ${Object.keys(muscleSnap).length ? renderMuscleHeatmap(muscleSnap, 'Muscle Group Heat Map') : `<div class="card"><div class="card-title">Muscle Group Heat Map</div><div class="empty-state">No workouts in this period yet.</div></div>`}
   `;
 }
 function toggleChartMode(){
@@ -2278,6 +2393,8 @@ function renderCalendar(){
   }
 
   const mt = monthlyTotals(y,m);
+  const completion = monthCompletionPct(y,m);
+  const best = bestWorkoutMonth();
   const detail = state.calSelected ? renderDayDetail(state.calSelected, byDate) : '';
 
   return `
@@ -2297,6 +2414,26 @@ function renderCalendar(){
       <div class="stat-box"><div class="stat-num">${mt.count}</div><div class="stat-label">Workouts This Month</div></div>
       <div class="stat-box"><div class="stat-num">${mt.volume.toLocaleString()}</div><div class="stat-label">Total Volume (lb)</div></div>
     </div>
+    <div class="card">
+      <div class="card-title">Monthly Completion</div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="mono" style="font-size:26px; font-weight:700; color:var(--accent);">${completion.pct}%</div>
+        <div class="list-row-sub" style="line-height:1.5;">Trained ${completion.workoutDays} of ${completion.daysElapsed} days elapsed this month.</div>
+      </div>
+      <div class="muscle-bar-track" style="margin-top:10px;"><div class="muscle-bar-fill" style="width:${completion.pct}%;"></div></div>
+    </div>
+    ${best ? `
+    <div class="card">
+      <div class="card-title">Best Workout Month</div>
+      <div class="list-row">
+        <div>
+          <div class="list-row-title">${best.label}</div>
+          <div class="list-row-sub">${best.count} workout${best.count===1?'':'s'} · ${best.volume.toLocaleString()} lb total volume</div>
+        </div>
+        <span class="tag" style="border-color:var(--accent); color:var(--accent);">🏆 Best</span>
+      </div>
+    </div>
+    ` : ''}
   `;
 }
 function calShift(delta){
@@ -2376,6 +2513,7 @@ function renderTennis(){
   const status = acwrStatus();
   const series = loadSeries(7);
   const d = state.tennisDraft;
+  const isMatch = d.type==='match';
   return `
     <div class="card">
       <div class="card-title">Log A Session</div>
@@ -2388,8 +2526,25 @@ function renderTennis(){
       <div class="pill-row" style="margin-bottom:0;">
         ${TENNIS_INTENSITIES.map(i=>`<div class="pill ${d.intensity===i.v?'active':''}" onclick="setTennisDraft('intensity',${i.v})">${i.label}</div>`).join('')}
       </div>
+      ${isMatch ? `
+      <label class="field-label">Opponent (optional)</label>
+      <input class="text-input" type="text" placeholder="Who'd you play?" value="${escapeHtml(d.opponent)}" oninput="state.tennisDraft.opponent=this.value">
+      <label class="field-label">Score</label>
+      <input class="text-input" type="text" placeholder="e.g. 6-4, 3-6, 6-2" value="${escapeHtml(d.score)}" oninput="state.tennisDraft.score=this.value">
+      <label class="field-label">Result</label>
+      <div class="pill-row" style="margin-bottom:0;">
+        <div class="pill ${d.result==='win'?'active':''}" onclick="setMatchResult('win')">🟢 Win</div>
+        <div class="pill ${d.result==='loss'?'active':''}" onclick="setMatchResult('loss')">🔴 Loss</div>
+      </div>
+      ` : ''}
       <label class="field-label">Notes (optional)</label>
-      <textarea class="notes" style="min-height:50px;" placeholder="Focus areas, how the body felt, opponent..." oninput="state.tennisDraft.notes=this.value">${escapeHtml(d.notes)}</textarea>
+      <textarea class="notes" style="min-height:50px;" placeholder="How the body felt, conditions, anything else..." oninput="state.tennisDraft.notes=this.value">${escapeHtml(d.notes)}</textarea>
+      <label class="field-label">What Could Improve? (optional)</label>
+      <div class="list-row-sub" style="margin-bottom:6px;">Tag what to work on — it rolls up into Focus Areas below so you can spot patterns.</div>
+      <div class="pill-row" style="margin-bottom:8px; flex-wrap:wrap;">
+        ${FOCUS_TAGS.map(tag=>`<div class="pill ${(d.improveTags||[]).includes(tag)?'active':''}" onclick="toggleImproveTag('${tag}')">${escapeHtml(tag)}</div>`).join('')}
+      </div>
+      <input class="text-input" type="text" placeholder="Anything specific? e.g. 'Toss drifting on serve'" value="${escapeHtml(d.improveNote)}" oninput="state.tennisDraft.improveNote=this.value">
       <button class="btn btn-primary btn-block" style="margin-top:12px; padding:14px;" onclick="logTennisSession()">Log Session</button>
     </div>
 
@@ -2409,17 +2564,22 @@ function renderTennis(){
       <div class="stat-box"><div class="stat-num">${weekMinutes}</div><div class="stat-label">Minutes On Court</div></div>
     </div>
 
+    ${renderFocusAreasCard()}
+
     <div class="card">
       <div class="card-title">Recent Sessions</div>
       ${sessions.length ? sessions.slice(0,10).map(s=>{
         const t = TENNIS_TYPES[s.type] || {icon:'🎾', label:'Session'};
         const eff = (TENNIS_INTENSITIES.find(i=>i.v===s.intensity)||{}).label || '';
+        const resultBadge = s.type==='match' && s.result ? `<span class="tag" style="${s.result==='win'?'background:rgba(48,209,88,0.18); color:#30d158;':'background:rgba(255,69,58,0.15); color:var(--danger);'} border:none; margin-left:6px;">${s.result==='win'?'W':'L'}</span>` : '';
         return `
-        <div class="list-row">
+        <div class="list-row" style="align-items:flex-start;">
           <div>
-            <div class="list-row-title">${t.icon} ${t.label}</div>
-            <div class="list-row-sub">${prettyDate(s.date)} · ${s.duration} min${eff?' · '+eff:''}</div>
+            <div class="list-row-title">${t.icon} ${t.label}${s.opponent?` vs. ${escapeHtml(s.opponent)}`:''}${resultBadge}</div>
+            <div class="list-row-sub">${prettyDate(s.date)} · ${s.duration} min${eff?' · '+eff:''}${s.score?' · '+escapeHtml(s.score):''}</div>
             ${s.notes?`<div class="list-row-sub" style="margin-top:2px;">${escapeHtml(s.notes)}</div>`:''}
+            ${(s.improveTags&&s.improveTags.length) ? `<div style="margin-top:5px; display:flex; gap:4px; flex-wrap:wrap;">${s.improveTags.map(tag=>`<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+            ${s.improveNote?`<div class="list-row-sub" style="margin-top:4px; font-style:italic;">"${escapeHtml(s.improveNote)}"</div>`:''}
           </div>
           <button class="icon-btn" style="width:36px;height:36px; color:var(--danger); flex-shrink:0;" onclick="deleteTennisSession('${s.id}')" aria-label="Delete session">✕</button>
         </div>
@@ -2427,6 +2587,29 @@ function renderTennis(){
       }).join('') : `<div class="empty-state">No sessions yet — log a match or practice above to start tracking your weekly load.</div>`}
     </div>
     <div style="height:10px;"></div>
+  `;
+}
+function renderFocusAreasCard(){
+  const { ranked, notes } = focusAreaStats(30);
+  if(!ranked.length && !notes.length) return '';
+  return `
+    <div class="card">
+      <div class="card-title">Focus Areas — Last 30 Days</div>
+      ${ranked.length ? `
+        <div class="pill-row" style="margin-bottom:12px; flex-wrap:wrap;">
+          ${ranked.map(([tag,n])=>`<div class="pill" style="cursor:default;">${escapeHtml(tag)} <span class="mono" style="opacity:.7;">×${n}</span></div>`).join('')}
+        </div>
+      ` : ''}
+      ${notes.length ? `
+        <label class="field-label" style="margin-top:0;">Recent Notes</label>
+        ${notes.map(s=>`
+          <div class="list-row" style="display:block;">
+            <div class="list-row-sub">${prettyDate(s.date)}${(s.improveTags&&s.improveTags.length)?' · '+s.improveTags.map(escapeHtml).join(', '):''}</div>
+            ${s.improveNote ? `<div style="font-size:13.5px; margin-top:2px;">${escapeHtml(s.improveNote)}</div>` : ''}
+          </div>
+        `).join('')}
+      ` : ''}
+    </div>
   `;
 }
 function renderLoadBarChart(series){
@@ -2448,6 +2631,80 @@ function renderLoadBarChart(series){
     `;
   }).join('');
   return `<svg width="100%" height="140" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
+}
+
+/* ---------------- Progress Overview Charts ---------------- */
+function weeklySeries(weeks, valueFn){
+  const out = [];
+  for(let i=weeks-1; i>=0; i--){
+    const end = new Date(Date.now()-i*7*86400000);
+    const start = new Date(end.getTime()-6*86400000);
+    const startStr = dateToStr(start), endStr = dateToStr(end);
+    out.push({ label:endStr, value: valueFn(startStr, endStr) });
+  }
+  return out;
+}
+function weeklyVolumeSeries(weeks){
+  return weeklySeries(weeks, (startStr,endStr)=>{
+    let vol = 0;
+    for(const w of state.data.workouts){
+      if(w.date<startStr || w.date>endStr) continue;
+      for(const exId in w.exercises){
+        const ex = w.exercises[exId];
+        const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
+        for(const s of allSets){ vol += (Number(s.weight)||0)*(Number(s.reps)||0); }
+      }
+    }
+    return vol;
+  });
+}
+function weeklyFrequencySeries(weeks){
+  return weeklySeries(weeks, (startStr,endStr)=>{
+    return new Set(state.data.workouts.filter(w=>w.date>=startStr && w.date<=endStr).map(w=>w.date)).size;
+  });
+}
+function renderBarChart(data, colorVar){
+  colorVar = colorVar || 'var(--accent)';
+  const w=300, h=130, padL=8, padR=8, padT=10, padB=18;
+  const max = Math.max(1, ...data.map(d=>d.value));
+  const gap = (w-padL-padR)/data.length;
+  const barW = gap*0.55;
+  const usable = h-padT-padB;
+  const labelEvery = Math.max(1, Math.ceil(data.length/8));
+  const bars = data.map((d,i)=>{
+    const bh = (d.value/max)*usable;
+    const x = padL + i*gap + (gap-barW)/2;
+    const y = h-padB-bh;
+    const showLabel = (i % labelEvery === 0) || i===data.length-1;
+    const lbl = showLabel ? new Date(d.label+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '';
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${colorVar}" rx="2"><title>Week of ${prettyDate(d.label)}: ${d.value.toLocaleString()}</title></rect>
+      ${lbl ? `<text x="${(x+barW/2).toFixed(1)}" y="${h-3}" text-anchor="middle" font-size="7" fill="var(--text-dim)" font-family="IBM Plex Mono">${lbl}</text>` : ''}
+    `;
+  }).join('');
+  return `<svg width="100%" height="140" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
+}
+function buildAggregateExerciseSnapshot(days){
+  const cutoff = days ? dateToStr(new Date(Date.now()-(days-1)*86400000)) : null;
+  const snap = {};
+  for(const w of state.data.workouts){
+    if(cutoff && w.date<cutoff) continue;
+    for(const exId in w.exercises){
+      const ex = w.exercises[exId];
+      if(!snap[exId]) snap[exId] = ex.unilateral ? {unilateral:true, leftSets:[], rightSets:[]} : {sets:[]};
+      if(ex.unilateral){
+        snap[exId].leftSets.push(...(ex.leftSets||[]));
+        snap[exId].rightSets.push(...(ex.rightSets||[]));
+      } else {
+        snap[exId].sets.push(...(ex.sets||[]));
+      }
+    }
+  }
+  return snap;
+}
+function setProgressMuscleRange(d){
+  state.progressMuscleRange = d;
+  render();
 }
 
 /* ---------------- More: bodyweight, weekly plan, settings ---------------- */

@@ -203,10 +203,19 @@ h1,h2,h3,.display{
 .set-input:focus{outline:2px solid var(--accent); outline-offset:-1px;}
 .set-input-label{font-size:9px; color:var(--text-dim); text-align:center; margin-bottom:2px; letter-spacing:0.08em; text-transform:uppercase;}
 .set-del-btn{width:28px; height:28px; border-radius:8px; background:var(--bg-card-2); color:var(--danger); font-size:13px; flex-shrink:0;}
-.plate-calc{display:flex; align-items:center; gap:8px; margin:8px 0 10px; padding:8px 10px; background:var(--bg-card-2); border-radius:10px;}
-.plate-calc-label{font-size:11px; color:var(--text-dim); white-space:nowrap;}
-.plate-calc-input{max-width:80px; flex-shrink:0;}
-.plate-calc-out{font-size:12px; color:var(--accent); flex:1;}
+.plate-calc{margin:8px 0 10px; padding:10px; background:var(--bg-card-2); border-radius:12px;}
+.plate-calc-title{font-size:11px; color:var(--text-dim); margin-bottom:8px; line-height:1.4;}
+.plate-row{display:flex; align-items:center; justify-content:space-between; padding:5px 0;}
+.plate-row + .plate-row{border-top:1px solid rgba(255,255,255,0.06);}
+.plate-size{font-size:14px; font-weight:600;}
+.plate-stepper{display:flex; align-items:center; gap:10px;}
+.plate-step-btn{
+  width:30px; height:30px; border-radius:8px; border:none; background:var(--bg-card);
+  color:var(--text); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.plate-step-btn:active{background:var(--accent); color:#fff;}
+.plate-count{min-width:18px; text-align:center; font-size:14px;}
+.plate-calc-total{margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:14px; font-weight:700;}
 
 textarea.notes{
   width:100%; min-height:70px; background:var(--bg-card-2); border:none; border-radius:12px;
@@ -381,8 +390,11 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.12.1';
 const RELEASE_NOTES = [
+  { version:'2.12.1', date:'2026-08-09', notes:[
+    'Reworked the Smith machine plate calculator — instead of typing a total and decoding the breakdown, tap +/- on each plate size and watch the total build (bar + plates × both sides), then apply it straight to Set 1.',
+  ]},
   { version:'2.12.0', date:'2026-08-07', notes:[
     'You can now delete a set, not just add one — every logged set has a ✕ next to it.',
     'Bodyweight exercises (pull-ups, dips) no longer ask for a weight — they track reps only, including personal bests and progression targets.',
@@ -1075,6 +1087,7 @@ let state = {
   exerciseInfoOpen: null,
   releaseNotesOpen: false,
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
+  plateCounts: {},
   loaded:false,
 };
 let lastSnapshot = null;
@@ -1275,27 +1288,38 @@ function roundToPlate(weight){
 }
 function isSmithBarById(id){ return !!(state.data.exercises[id] && state.data.exercises[id].barType==='smith'); }
 const SMITH_AVAILABLE_PLATES = [45,25,10];
-function plateBreakdown(totalWeight){
-  const barW = state.data.settings.smithBarWeight ?? 31;
-  totalWeight = Number(totalWeight)||0;
-  if(totalWeight <= barW) return { barOnly:true, barWeight:barW, perSide:[], remainder:0 };
-  let remaining = (totalWeight - barW)/2;
-  const perSide = [];
-  for(const p of SMITH_AVAILABLE_PLATES){
-    while(remaining >= p - 0.01){ perSide.push(p); remaining -= p; }
-  }
-  return { barOnly:false, barWeight:barW, perSide, remainder: Math.round(remaining*100)/100 };
+function getPlateCounts(exId){
+  if(!state.plateCounts) state.plateCounts = {};
+  if(!state.plateCounts[exId]) state.plateCounts[exId] = {45:0,25:0,10:0};
+  return state.plateCounts[exId];
 }
-function plateBreakdownText(totalWeight){
-  const b = plateBreakdown(totalWeight);
-  if(b.barOnly) return `Bar only (${b.barWeight} lb)`;
-  if(!b.perSide.length) return `Bar only (${b.barWeight} lb)`;
-  const counts = {};
-  for(const p of b.perSide) counts[p] = (counts[p]||0)+1;
-  const parts = Object.keys(counts).sort((a,b)=>b-a).map(p=>`${counts[p]}×${p}`);
-  let text = parts.join(' + ') + ' /side';
-  if(b.remainder > 0.4) text += ` (+${b.remainder} lb short)`;
-  return text;
+function adjustPlate(exId, plate, delta){
+  const counts = getPlateCounts(exId);
+  counts[plate] = Math.max(0, (counts[plate]||0) + delta);
+  render();
+}
+function smithBarWeightVal(){
+  return state.data.settings.smithBarWeight ?? 31;
+}
+function smithTotalFromCounts(exId){
+  const counts = getPlateCounts(exId);
+  const perSide = SMITH_AVAILABLE_PLATES.reduce((sum,p)=> sum + p*(counts[p]||0), 0);
+  return smithBarWeightVal() + perSide*2;
+}
+function applyPlateTotal(exId){
+  const total = smithTotalFromCounts(exId);
+  ensureDraft(state.workoutDay);
+  if(isUnilateralById(exId)){
+    ['left','right'].forEach(side=>{
+      if(!state.draftSets[exId][side][0]) state.draftSets[exId][side][0] = {weight:'',reps:''};
+      state.draftSets[exId][side][0].weight = String(total);
+    });
+  } else {
+    if(!state.draftSets[exId][0]) state.draftSets[exId][0] = {weight:'',reps:''};
+    state.draftSets[exId][0].weight = String(total);
+  }
+  showToast(`Set 1 weight set to ${total} lb`);
+  render();
 }
 function suggestedWeight(exId){
   const prev = previousWeightFor(exId);
@@ -1872,11 +1896,24 @@ function renderExerciseCard(ex){
   `;
 }
 function renderPlateCalc(exId){
+  const counts = getPlateCounts(exId);
+  const barW = smithBarWeightVal();
+  const total = smithTotalFromCounts(exId);
   return `
     <div class="plate-calc">
-      <span class="plate-calc-label">Plates /side:</span>
-      <input class="set-input plate-calc-input" type="number" inputmode="decimal" min="0" step="2.5" placeholder="Total lb" oninput="document.getElementById('plateOut-${exId}').textContent = plateBreakdownText(this.value)">
-      <span id="plateOut-${exId}" class="mono plate-calc-out">${plateBreakdownText(0)}</span>
+      <div class="plate-calc-title">Bar: ${barW} lb &nbsp;+&nbsp; plates below (each side)</div>
+      ${SMITH_AVAILABLE_PLATES.map(p=>`
+        <div class="plate-row">
+          <span class="plate-size">${p} lb</span>
+          <div class="plate-stepper">
+            <button class="plate-step-btn" onclick="adjustPlate('${exId}',${p},-1)" aria-label="Remove a ${p} lb plate">−</button>
+            <span class="plate-count mono">${counts[p]||0}</span>
+            <button class="plate-step-btn" onclick="adjustPlate('${exId}',${p},1)" aria-label="Add a ${p} lb plate">+</button>
+          </div>
+        </div>
+      `).join('')}
+      <div class="plate-calc-total">Total: <span class="mono" style="color:var(--accent);">${total} lb</span></div>
+      <button class="btn btn-secondary btn-sm btn-block" style="margin-top:6px;" onclick="applyPlateTotal('${exId}')">Use ${total} lb for Set 1</button>
     </div>
   `;
 }

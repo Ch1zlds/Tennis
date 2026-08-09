@@ -193,7 +193,8 @@ h1,h2,h3,.display{
 .swatch.active{border-color:#fff;}
 .swatch-check{color:#fff; font-size:14px; font-weight:700; opacity:0;}
 .swatch.active .swatch-check{opacity:1;}
-.set-row{display:grid; grid-template-columns:28px 1fr 1fr; gap:8px; align-items:center; margin-bottom:6px;}
+.set-row{display:grid; grid-template-columns:28px 1fr 1fr 28px; gap:8px; align-items:center; margin-bottom:6px;}
+.set-row-bw{grid-template-columns:28px 1fr 28px;}
 .set-idx{font-family:'IBM Plex Mono'; font-size:12px; color:var(--text-dim); text-align:center;}
 .set-input{
   width:100%; background:var(--bg-card-2); border:none; border-radius:10px;
@@ -201,6 +202,11 @@ h1,h2,h3,.display{
 }
 .set-input:focus{outline:2px solid var(--accent); outline-offset:-1px;}
 .set-input-label{font-size:9px; color:var(--text-dim); text-align:center; margin-bottom:2px; letter-spacing:0.08em; text-transform:uppercase;}
+.set-del-btn{width:28px; height:28px; border-radius:8px; background:var(--bg-card-2); color:var(--danger); font-size:13px; flex-shrink:0;}
+.plate-calc{display:flex; align-items:center; gap:8px; margin:8px 0 10px; padding:8px 10px; background:var(--bg-card-2); border-radius:10px;}
+.plate-calc-label{font-size:11px; color:var(--text-dim); white-space:nowrap;}
+.plate-calc-input{max-width:80px; flex-shrink:0;}
+.plate-calc-out{font-size:12px; color:var(--accent); flex:1;}
 
 textarea.notes{
   width:100%; min-height:70px; background:var(--bg-card-2); border:none; border-radius:12px;
@@ -220,7 +226,7 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
   display:flex; padding:8px 4px calc(8px + var(--safe-bottom));
 }
 .tab-item{
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 1px;
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 2px;
   min-height:48px;
   color:var(--text-dim); background:none; border:none; font-family:inherit; cursor:pointer;
   position:relative; transition:color .15s ease;
@@ -230,8 +236,8 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
   content:''; position:absolute; top:-9px; left:50%; transform:translateX(-50%);
   width:16px; height:3px; border-radius:0 0 3px 3px; background:var(--accent);
 }
-.tab-icon{font-size:18px; line-height:1;}
-.tab-label{font-size:9.5px; letter-spacing:0; text-transform:none; font-weight:500;}
+.tab-icon{font-size:19px; line-height:1;}
+.tab-label{font-size:10px; letter-spacing:0; text-transform:none; font-weight:500;}
 
 /* calendar */
 .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
@@ -355,7 +361,6 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 <div class="tabbar" id="tabbar">
   <button class="tab-item" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
   <button class="tab-item" data-tab="workout" onclick="switchTab('workout')"><span class="tab-icon">🏋️</span><span class="tab-label">Workout</span></button>
-  <button class="tab-item" data-tab="tennis" onclick="switchTab('tennis')"><span class="tab-icon">🎾</span><span class="tab-label">Tennis</span></button>
   <button class="tab-item" data-tab="progress" onclick="switchTab('progress')"><span class="tab-icon">📈</span><span class="tab-label">Progress</span></button>
   <button class="tab-item" data-tab="calendar" onclick="switchTab('calendar')"><span class="tab-icon">📅</span><span class="tab-label">Calendar</span></button>
   <button class="tab-item" data-tab="checklist" onclick="switchTab('checklist')"><span class="tab-icon">✅</span><span class="tab-label">Daily</span></button>
@@ -375,9 +380,24 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 --------------------------------------------------------------- */
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
-const TAB_ORDER = ['dashboard','workout','tennis','progress','calendar','checklist','more'];
-const APP_VERSION = '2.9.0';
+const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
+const APP_VERSION = '2.12.0';
 const RELEASE_NOTES = [
+  { version:'2.12.0', date:'2026-08-07', notes:[
+    'You can now delete a set, not just add one — every logged set has a ✕ next to it.',
+    'Bodyweight exercises (pull-ups, dips) no longer ask for a weight — they track reps only, including personal bests and progression targets.',
+    'New Smith machine plate calculator on every Smith exercise — enter a target weight and see the per-side plate breakdown (bar weight is 31 lb by default, using 45/25/10 lb plates).',
+    'Removed the Tennis tab to keep the app focused and the bottom nav less crowded.',
+  ]},
+  { version:'2.11.0', date:'2026-07-18', notes:[
+    'Added 15 more B52evo exercises to the bank: dips, Smith machine overhead press/close-grip bench/deadlift/calf raise, cable low-to-high woodchop/overhead triceps extension/upright row/shrug/reverse fly/single-arm overhead press/squat, and landmine 180, squat-to-press, and RDL.',
+    'The landmine 180 is worth a look for tennis — it\u2019s a load-and-rotate pattern close to your forehand/backhand swing.',
+  ]},
+  { version:'2.10.0', date:'2026-07-18', notes:[
+    'Added 17 new exercises for the Major Fitness B52evo — Smith machine squat/bench/incline/RDL, cable rows/pulldown/pushdown/curl/face pull, landmine press/row/rotation, cable woodchop, Pallof press, and pull-ups.',
+    "Your weekly plan was updated to use the new equipment: Smith machine presses and squats, cable rows, a cable face pull for shoulder health, pull-ups, and rotational landmine/cable core work in place of a few dumbbell moves.",
+    'The Weekly Plan editor\u2019s exercise bank now covers dumbbell, Smith machine, cable, landmine, and pull-up movements — pick any of them from the dropdown on any day.',
+  ]},
   { version:'2.9.0', date:'2026-07-17', notes:[
     'New Progress charts: total weight lifted per week, workout frequency, and bodyweight — all in one place.',
     'The muscle heat map now works across your whole history, not just one workout — switch between Last 30 Days, Last 90 Days, or All Time.',
@@ -452,10 +472,10 @@ function quoteForToday(){
 }
 
 const DEFAULT_PROGRAM = {
-  1: { name:'Upper Strength', blurb:'Simple push and pull strength for a stronger, more durable upper body.', exerciseIds:['flat_press','chest_supported_row','sh_press','incline_rev_fly','zottman_curl'], supersets:[] },
-  2: { name:'Lower Body & Movement', blurb:'Build a stable base for hard stops, quick changes of direction, and court coverage.', exerciseIds:['goblet_squat','rdl','bulgarian_split_squat','bench_knee_drive','seated_calf_raise'], supersets:[] },
-  3: { name:'Upper Body & Core', blurb:'Balanced pressing, rowing, shoulder care, and trunk control for tennis.', exerciseIds:['inc_press','single_row','lat_raise','external_rotation','dead_bug_press'], supersets:[] },
-  4: { name:'Full Body & Stability', blurb:'Strength and control without turning the session into an exhausting circuit.', exerciseIds:['hip_thrust','reverse_lunge','farmers_carry','woodchop','wrist_curl'], supersets:[] },
+  1: { name:'Upper Strength', blurb:'Smith machine and cable pressing/pulling for a stronger, more durable upper body.', exerciseIds:['smith_bench_press','cable_seated_row','sh_press','cable_face_pull','pullup'], supersets:[] },
+  2: { name:'Lower Body & Movement', blurb:'Build a stable base for hard stops, quick changes of direction, and court coverage.', exerciseIds:['smith_squat','smith_rdl','bulgarian_split_squat','bench_knee_drive','seated_calf_raise'], supersets:[] },
+  3: { name:'Upper Body & Core', blurb:'Balanced pressing, rowing, shoulder care, and rotational core control for tennis.', exerciseIds:['smith_incline_press','cable_single_arm_row','lat_raise','external_rotation','cable_pallof_press'], supersets:[] },
+  4: { name:'Full Body & Stability', blurb:'Strength, rotational power, and control without turning the session into an exhausting circuit.', exerciseIds:['hip_thrust','reverse_lunge','farmers_carry','landmine_rotation','wrist_curl'], supersets:[] },
 };
 const DEFAULT_EXERCISES = {
   sh_press:{name:'Dumbbell Shoulder Press'}, inc_press:{name:'Dumbbell Incline Press'},
@@ -481,6 +501,22 @@ const DEFAULT_EXERCISES = {
   plank_pullthrough:{name:'Dumbbell Plank Pull-Through', unilateral:true}, dead_bug_press:{name:'Dumbbell Dead Bug Press', unilateral:true},
   bench_knee_drive:{name:'Dumbbell Step-Up Knee Drive', unilateral:true}, external_rotation:{name:'Side-Lying Dumbbell External Rotation', unilateral:true},
   incline_y_raise:{name:'Incline Dumbbell Y-Raise'}, zottman_curl:{name:'Dumbbell Zottman Curl'},
+  // Major Fitness B52evo (Smith machine / dual-cable functional trainer / landmine / pull-up station)
+  smith_squat:{name:'Smith Machine Squat', barType:'smith'}, smith_bench_press:{name:'Smith Machine Bench Press', barType:'smith'},
+  smith_incline_press:{name:'Smith Machine Incline Press', barType:'smith'}, smith_rdl:{name:'Smith Machine Romanian Deadlift', barType:'smith'},
+  cable_lat_pulldown:{name:'Cable Lat Pulldown'}, cable_seated_row:{name:'Cable Seated Row'},
+  cable_single_arm_row:{name:'Cable Single-Arm Row', unilateral:true}, cable_tricep_pushdown:{name:'Cable Tricep Pushdown'},
+  cable_bicep_curl:{name:'Cable Bicep Curl'}, cable_face_pull:{name:'Cable Face Pull'},
+  cable_chest_press:{name:'Cable Single-Arm Chest Press', unilateral:true}, cable_woodchop:{name:'Cable Woodchop (High-to-Low)', unilateral:true},
+  cable_pallof_press:{name:'Cable Pallof Press', unilateral:true}, landmine_press:{name:'Landmine Single-Arm Press', unilateral:true},
+  landmine_row:{name:'Landmine Single-Arm Row', unilateral:true}, landmine_rotation:{name:'Landmine Rotational Twist', unilateral:true},
+  pullup:{name:'Pull-Up', bodyweight:true},
+  dip:{name:'Dip', bodyweight:true}, smith_ohp:{name:'Smith Machine Overhead Press', barType:'smith'}, smith_close_grip_bench:{name:'Smith Machine Close-Grip Bench Press', barType:'smith'},
+  smith_deadlift:{name:'Smith Machine Deadlift', barType:'smith'}, smith_calf_raise:{name:'Smith Machine Calf Raise', barType:'smith'},
+  cable_woodchop_low_high:{name:'Cable Woodchop (Low-to-High)', unilateral:true}, cable_overhead_tricep_ext:{name:'Cable Overhead Triceps Extension'},
+  cable_upright_row:{name:'Cable Upright Row'}, cable_shrug:{name:'Cable Shrug'}, cable_reverse_fly:{name:'Cable Reverse Fly'},
+  cable_single_arm_ohp:{name:'Cable Single-Arm Overhead Press', unilateral:true}, cable_squat:{name:'Cable Squat'},
+  landmine_180:{name:'Landmine 180', unilateral:true}, landmine_squat_press:{name:'Landmine Squat to Press'}, landmine_rdl:{name:'Landmine RDL'},
 };
 
 const EXERCISE_MUSCLE_MAP = {
@@ -498,6 +534,15 @@ const EXERCISE_MUSCLE_MAP = {
   incline_rev_fly:'Shoulders', db_high_pull:'Shoulders', side_bend:'Obliques', suitcase_carry:'Core',
   plank_pullthrough:'Core', dead_bug_press:'Core', bench_knee_drive:'Quads', external_rotation:'Shoulders',
   incline_y_raise:'Shoulders', zottman_curl:'Biceps',
+  smith_squat:'Quads', smith_bench_press:'Chest', smith_incline_press:'Chest', smith_rdl:'Hamstrings',
+  cable_lat_pulldown:'Back', cable_seated_row:'Back', cable_single_arm_row:'Back', cable_tricep_pushdown:'Triceps',
+  cable_bicep_curl:'Biceps', cable_face_pull:'Shoulders', cable_chest_press:'Chest', cable_woodchop:'Obliques',
+  cable_pallof_press:'Core', landmine_press:'Shoulders', landmine_row:'Back', landmine_rotation:'Obliques',
+  pullup:'Back',
+  dip:'Chest', smith_ohp:'Shoulders', smith_close_grip_bench:'Triceps', smith_deadlift:'Hamstrings', smith_calf_raise:'Calves',
+  cable_woodchop_low_high:'Obliques', cable_overhead_tricep_ext:'Triceps', cable_upright_row:'Shoulders', cable_shrug:'Back',
+  cable_reverse_fly:'Shoulders', cable_single_arm_ohp:'Shoulders', cable_squat:'Quads',
+  landmine_180:'Obliques', landmine_squat_press:'Quads', landmine_rdl:'Hamstrings',
 };
 
 const BASE_POSE = {
@@ -724,6 +769,15 @@ const EXERCISE_POSE_MAP = {
   incline_rev_fly:'reverse_fly', db_high_pull:'raise_lateral', side_bend:'twist', suitcase_carry:'carry',
   plank_pullthrough:'row', dead_bug_press:'press', bench_knee_drive:'lunge', external_rotation:'raise_lateral',
   incline_y_raise:'reverse_fly', zottman_curl:'curl',
+  smith_squat:'squat', smith_bench_press:'incline_press', smith_incline_press:'incline_press', smith_rdl:'hinge',
+  cable_lat_pulldown:'row_bench', cable_seated_row:'row_bench', cable_single_arm_row:'row_bench', cable_tricep_pushdown:'tricep_ext',
+  cable_bicep_curl:'curl', cable_face_pull:'reverse_fly', cable_chest_press:'press', cable_woodchop:'woodchop',
+  cable_pallof_press:'press', landmine_press:'press', landmine_row:'row', landmine_rotation:'woodchop',
+  pullup:'row',
+  dip:'incline_press', smith_ohp:'press', smith_close_grip_bench:'incline_press', smith_deadlift:'hinge', smith_calf_raise:'calf_raise',
+  cable_woodchop_low_high:'woodchop', cable_overhead_tricep_ext:'tricep_ext', cable_upright_row:'raise_lateral', cable_shrug:'raise_lateral',
+  cable_reverse_fly:'reverse_fly', cable_single_arm_ohp:'press', cable_squat:'squat',
+  landmine_180:'woodchop', landmine_squat_press:'squat', landmine_rdl:'hinge',
 };
 const GUIDE_TYPES = {
   press:{setup:'Sit or lie with feet planted and ribs stacked over your pelvis.', path:'Lower the bells with control, then press until your arms are long without forcing the lockout.', cue:'Keep your wrists over your elbows and let your shoulder blades stay set.', avoid:'Flaring the ribs or bouncing the dumbbells off your chest.'},
@@ -744,6 +798,15 @@ const EXERCISE_GUIDE_TYPE = {
   lat_raise:'raise',front_raise:'raise',rev_fly:'raise',incline_rev_fly:'raise',db_shrug:'raise',db_high_pull:'raise',external_rotation:'raise',incline_y_raise:'raise',wrist_curl:'raise',
   woodchop:'core',russian_twist:'core',side_bend:'core',plank_pullthrough:'core',dead_bug_press:'core',
   farmers_carry:'carry',suitcase_carry:'carry',bicep_curl:'curl',zottman_curl:'curl',
+  smith_squat:'squat', smith_bench_press:'press', smith_incline_press:'press', smith_rdl:'hinge',
+  cable_lat_pulldown:'row', cable_seated_row:'row', cable_single_arm_row:'row', cable_tricep_pushdown:'press',
+  cable_bicep_curl:'curl', cable_face_pull:'raise', cable_chest_press:'press', cable_woodchop:'core',
+  cable_pallof_press:'core', landmine_press:'press', landmine_row:'row', landmine_rotation:'core',
+  pullup:'row',
+  dip:'press', smith_ohp:'press', smith_close_grip_bench:'press', smith_deadlift:'hinge', smith_calf_raise:'squat',
+  cable_woodchop_low_high:'core', cable_overhead_tricep_ext:'press', cable_upright_row:'raise', cable_shrug:'raise',
+  cable_reverse_fly:'raise', cable_single_arm_ohp:'press', cable_squat:'squat',
+  landmine_180:'core', landmine_squat_press:'squat', landmine_rdl:'hinge',
 };
 function poseTemplateFor(exId){
   return POSE_TEMPLATES[EXERCISE_POSE_MAP[exId]] || POSE_TEMPLATES.generic;
@@ -957,6 +1020,11 @@ function allExercises(){
 }
 function exerciseById(id){ return allExercises().find(e=>e.id===id); }
 function isUnilateralById(id){ return !!(state.data.exercises[id] && state.data.exercises[id].unilateral); }
+function isBodyweightById(id){ return !!(state.data.exercises[id] && state.data.exercises[id].bodyweight); }
+function statLabel(entry, exId){
+  if(!entry) return '—';
+  return isBodyweightById(exId) ? `${entry.reps} rep${entry.reps===1?'':'s'}` : `${entry.maxWeight} lb`;
+}
 function archivedExercises(){
   const activeIds = new Set(allExercises().map(e=>e.id));
   const out = [];
@@ -974,11 +1042,10 @@ function defaultData(){
     workouts: [],
     bodyweight: [],
     vacations: [],
-    tennisSessions: [],
     dailyChecklist: {},
     program: JSON.parse(JSON.stringify(DEFAULT_PROGRAM)),
     exercises: JSON.parse(JSON.stringify(DEFAULT_EXERCISES)),
-    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5 },
+    settings: { autoOpenNextWorkout:false, lastExportAt:null, streakGapTolerance:2, accentColor:'red', plateIncrement:2.5, smithBarWeight:31 },
     meta: { createdAt: new Date().toISOString(), lastSeenVersion: null }
   };
 }
@@ -1007,7 +1074,6 @@ let state = {
   calSelected: null,
   exerciseInfoOpen: null,
   releaseNotesOpen: false,
-  tennisDraft: { type:'practice', duration:60, intensity:3, notes:'', opponent:'', score:'', result:'', improveTags:[], improveNote:'' },
   timer: { seconds:60, remaining:60, running:false, intervalId:null },
   loaded:false,
 };
@@ -1042,7 +1108,6 @@ async function loadData(){
         program: parsed.program || d.program,
         exercises: {...d.exercises, ...(parsed.exercises||{})},
         vacations: parsed.vacations || [],
-        tennisSessions: parsed.tennisSessions || [],
         dailyChecklist: parsed.dailyChecklist || {},
         settings: {...d.settings, ...(parsed.settings||{})},
         meta: {...d.meta, ...(parsed.meta||{})},
@@ -1058,7 +1123,51 @@ async function loadData(){
     state.data.settings.simplePlanV1 = true;
     await saveData();
   }
+  if(!state.data.settings.b52evoUpgradeV1){
+    applyB52evoUpgrade();
+    state.data.settings.b52evoUpgradeV1 = true;
+    await saveData();
+  }
+  if(!state.data.settings.bodyweightFlagsV1){
+    for(const id of ['pullup','dip']){
+      if(state.data.exercises[id]) state.data.exercises[id].bodyweight = true;
+    }
+    const smithIds = ['smith_squat','smith_bench_press','smith_incline_press','smith_rdl','smith_ohp','smith_close_grip_bench','smith_deadlift','smith_calf_raise'];
+    for(const id of smithIds){
+      if(state.data.exercises[id]) state.data.exercises[id].barType = 'smith';
+    }
+    state.data.settings.bodyweightFlagsV1 = true;
+    await saveData();
+  }
   state.loaded = true;
+}
+const B52EVO_SWAP_MAP = {
+  flat_press:'smith_bench_press', chest_supported_row:'cable_seated_row',
+  goblet_squat:'smith_squat', rdl:'smith_rdl',
+  inc_press:'smith_incline_press', single_row:'cable_single_arm_row',
+  dead_bug_press:'cable_pallof_press', woodchop:'landmine_rotation',
+};
+function applyB52evoUpgrade(){
+  for(const day in state.data.program){
+    const def = state.data.program[day];
+    def.exerciseIds = def.exerciseIds.map(id=>{
+      const newId = B52EVO_SWAP_MAP[id];
+      if(!newId) return id;
+      state.data.exercises[newId] = {...(state.data.exercises[newId] || DEFAULT_EXERCISES[newId])};
+      return newId;
+    });
+  }
+  const allIds = new Set(Object.values(state.data.program).flatMap(d=>d.exerciseIds));
+  if(state.data.program[1]){
+    if(!allIds.has('cable_face_pull')){
+      state.data.program[1].exerciseIds.push('cable_face_pull');
+      state.data.exercises['cable_face_pull'] = {...DEFAULT_EXERCISES['cable_face_pull']};
+    }
+    if(!allIds.has('pullup')){
+      state.data.program[1].exerciseIds.push('pullup');
+      state.data.exercises['pullup'] = {...DEFAULT_EXERCISES['pullup']};
+    }
+  }
 }
 async function saveData(){
   try{
@@ -1107,19 +1216,25 @@ function _runToastUndo(){
 
 /* ---------------- computed stats ---------------- */
 function exerciseHistory(exId){
+  const isBW = isBodyweightById(exId);
   const rows = [];
   for(const w of state.data.workouts){
     const ex = w.exercises && w.exercises[exId];
     if(!ex) continue;
     const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
     if(!allSets.length) continue;
-    let maxW = 0, repsAtMax = 0, volume = 0;
+    let maxW = 0, repsAtMax = 0, volume = 0, maxReps = 0;
     for(const s of allSets){
       const wt = Number(s.weight)||0, r = Number(s.reps)||0;
       volume += wt*r;
+      if(r>maxReps) maxReps = r;
       if(wt>0 && wt >= maxW){ maxW = wt; repsAtMax = r; }
     }
-    if(maxW>0) rows.push({date:w.date, maxWeight:maxW, reps:repsAtMax, day:w.day, volume});
+    if(isBW){
+      if(maxReps>0) rows.push({date:w.date, maxWeight:0, reps:maxReps, day:w.day, volume});
+    } else if(maxW>0){
+      rows.push({date:w.date, maxWeight:maxW, reps:repsAtMax, day:w.day, volume});
+    }
   }
   rows.sort((a,b)=> a.date.localeCompare(b.date));
   return rows;
@@ -1127,12 +1242,14 @@ function exerciseHistory(exId){
 function personalBest(exId){
   const h = exerciseHistory(exId);
   if(!h.length) return null;
-  return h.reduce((best,cur)=> cur.maxWeight>best.maxWeight ? cur : best, h[0]);
+  const isBW = isBodyweightById(exId);
+  return h.reduce((best,cur)=> (isBW ? cur.reps>best.reps : cur.maxWeight>best.maxWeight) ? cur : best, h[0]);
 }
 function strengthGainPct(exId){
   const h = exerciseHistory(exId);
   if(h.length<2) return null;
-  const first = h[0].maxWeight, last = h[h.length-1].maxWeight;
+  const isBW = isBodyweightById(exId);
+  const first = isBW ? h[0].reps : h[0].maxWeight, last = isBW ? h[h.length-1].reps : h[h.length-1].maxWeight;
   if(first<=0) return null;
   return ((last-first)/first)*100;
 }
@@ -1156,6 +1273,30 @@ function roundToPlate(weight){
   const inc = state.data.settings.plateIncrement || 2.5;
   return Math.round(weight/inc) * inc;
 }
+function isSmithBarById(id){ return !!(state.data.exercises[id] && state.data.exercises[id].barType==='smith'); }
+const SMITH_AVAILABLE_PLATES = [45,25,10];
+function plateBreakdown(totalWeight){
+  const barW = state.data.settings.smithBarWeight ?? 31;
+  totalWeight = Number(totalWeight)||0;
+  if(totalWeight <= barW) return { barOnly:true, barWeight:barW, perSide:[], remainder:0 };
+  let remaining = (totalWeight - barW)/2;
+  const perSide = [];
+  for(const p of SMITH_AVAILABLE_PLATES){
+    while(remaining >= p - 0.01){ perSide.push(p); remaining -= p; }
+  }
+  return { barOnly:false, barWeight:barW, perSide, remainder: Math.round(remaining*100)/100 };
+}
+function plateBreakdownText(totalWeight){
+  const b = plateBreakdown(totalWeight);
+  if(b.barOnly) return `Bar only (${b.barWeight} lb)`;
+  if(!b.perSide.length) return `Bar only (${b.barWeight} lb)`;
+  const counts = {};
+  for(const p of b.perSide) counts[p] = (counts[p]||0)+1;
+  const parts = Object.keys(counts).sort((a,b)=>b-a).map(p=>`${counts[p]}×${p}`);
+  let text = parts.join(' + ') + ' /side';
+  if(b.remainder > 0.4) text += ` (+${b.remainder} lb short)`;
+  return text;
+}
 function suggestedWeight(exId){
   const prev = previousWeightFor(exId);
   if(!prev || prev.maxWeight<=0) return null;
@@ -1166,6 +1307,16 @@ const PROGRESSION_REP_CEILING = 12;
 const PROGRESSION_REP_RESTART = 8;
 function nextTarget(exId){
   const prev = previousWeightFor(exId);
+  const isBW = isBodyweightById(exId);
+  if(isBW){
+    if(!prev || prev.reps<=0){
+      return { text:'No history yet — log a set today to start tracking your progress.', readyToBump:false };
+    }
+    if(prev.reps < PROGRESSION_REP_CEILING){
+      return { text:`Last: ${prev.reps} rep${prev.reps===1?'':'s'}. Aim for ${prev.reps+1}.`, readyToBump:false };
+    }
+    return { text:`Last: ${prev.reps} reps. You're crushing it — try a weighted vest or a slower tempo.`, readyToBump:false };
+  }
   if(!prev || prev.maxWeight<=0){
     return { text:'No history yet — log a set today to start tracking your progress.', readyToBump:false };
   }
@@ -1359,119 +1510,6 @@ function nextWorkoutDay(){
   return last>=4 ? 1 : last+1;
 }
 
-/* ---------------- Tennis Logging & Training Load ---------------- */
-const TENNIS_TYPES = {
-  match:    { label:'Match',    icon:'🏆' },
-  practice: { label:'Practice', icon:'🎯' },
-  hitting:  { label:'Hitting Session', icon:'🎾' },
-};
-const TENNIS_INTENSITIES = [
-  {v:1, label:'Light'},
-  {v:2, label:'Easy'},
-  {v:3, label:'Moderate'},
-  {v:4, label:'Hard'},
-  {v:5, label:'Max Effort'},
-];
-const FOCUS_TAGS = ['Serve','Return','Forehand','Backhand','Net Play','Footwork','Mental Game','Fitness'];
-function tennisSessionLoad(s){
-  // Simplified session-RPE style load: duration (min) x effort (2-10 scale).
-  return (Number(s.duration)||0) * ((Number(s.intensity)||0)*2);
-}
-function gymLoadForDate(dateStr){
-  let vol = 0;
-  for(const w of state.data.workouts){
-    if(w.date!==dateStr) continue;
-    for(const exId in w.exercises){
-      const ex = w.exercises[exId];
-      const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
-      for(const s of allSets){ vol += (Number(s.weight)||0)*(Number(s.reps)||0); }
-    }
-  }
-  return vol/40; // scaled down to a similar magnitude as tennis session load
-}
-function tennisLoadForDate(dateStr){
-  return (state.data.tennisSessions||[]).filter(s=>s.date===dateStr).reduce((sum,s)=>sum+tennisSessionLoad(s), 0);
-}
-function totalLoadForDate(dateStr){
-  return gymLoadForDate(dateStr) + tennisLoadForDate(dateStr);
-}
-function loadSeries(days){
-  const out = [];
-  for(let i=days-1; i>=0; i--){
-    const d = dateToStr(new Date(Date.now()-i*86400000));
-    out.push({date:d, gym:gymLoadForDate(d), tennis:tennisLoadForDate(d)});
-  }
-  return out;
-}
-function acwrStatus(){
-  const acute = loadSeries(7).reduce((s,d)=>s+d.gym+d.tennis, 0);
-  const chronic28 = loadSeries(28).reduce((s,d)=>s+d.gym+d.tennis, 0);
-  const chronicAvgWeek = chronic28/4;
-  if(chronicAvgWeek < 5) return { ratio:null, label:'Not Enough Data', color:'var(--text-dim)', blurb:'Log a couple weeks of sessions to see a recovery status here.' };
-  const ratio = acute/chronicAvgWeek;
-  if(ratio < 0.75) return { ratio, label:'Fresh', color:'var(--court)', blurb:'Load is well below your recent average — a good window to push harder.' };
-  if(ratio <= 1.3) return { ratio, label:'Balanced', color:'var(--accent)', blurb:'This week\u2019s load is right around your recent average. Good zone to stay in.' };
-  return { ratio, label:'High Load', color:'var(--danger)', blurb:'This week is well above your recent average — prioritize sleep, water, and light recovery days.' };
-}
-function tennisSessionsThisWeek(){
-  const cutoff = dateToStr(new Date(Date.now()-6*86400000));
-  return (state.data.tennisSessions||[]).filter(s=>s.date>=cutoff);
-}
-function toggleImproveTag(tag){
-  const d = state.tennisDraft;
-  d.improveTags = d.improveTags || [];
-  if(d.improveTags.includes(tag)) d.improveTags = d.improveTags.filter(t=>t!==tag);
-  else d.improveTags = [...d.improveTags, tag];
-  render();
-}
-function setMatchResult(val){
-  state.tennisDraft.result = (state.tennisDraft.result===val) ? '' : val;
-  render();
-}
-function logTennisSession(){
-  const d = state.tennisDraft;
-  const duration = Number(d.duration);
-  if(!duration || duration<=0){ showToast('Enter how many minutes you played'); return; }
-  snapshot();
-  state.data.tennisSessions.push({
-    id: uid(), date: todayStr(), type: d.type, duration, intensity: d.intensity, notes: (d.notes||'').trim(),
-    opponent: d.type==='match' ? (d.opponent||'').trim() : '',
-    score: d.type==='match' ? (d.score||'').trim() : '',
-    result: d.type==='match' ? (d.result||'') : '',
-    improveTags: [...(d.improveTags||[])],
-    improveNote: (d.improveNote||'').trim(),
-  });
-  saveData();
-  state.tennisDraft = { type:'practice', duration:60, intensity:3, notes:'', opponent:'', score:'', result:'', improveTags:[], improveNote:'' };
-  showToast('Session logged', 4500, undoLast);
-  render();
-}
-function deleteTennisSession(id){
-  snapshot();
-  state.data.tennisSessions = state.data.tennisSessions.filter(s=>s.id!==id);
-  saveData();
-  showToast('Session deleted', 4500, undoLast);
-  render();
-}
-function setTennisDraft(key, val){
-  state.tennisDraft[key] = val;
-  render();
-}
-function focusAreaStats(days){
-  const cutoff = dateToStr(new Date(Date.now()-(days-1)*86400000));
-  const sessions = (state.data.tennisSessions||[]).filter(s=>s.date>=cutoff);
-  const counts = {};
-  for(const s of sessions){
-    for(const tag of (s.improveTags||[])){ counts[tag] = (counts[tag]||0)+1; }
-  }
-  const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const notes = [...(state.data.tennisSessions||[])]
-    .filter(s=>s.improveNote || (s.improveTags&&s.improveTags.length))
-    .sort((a,b)=>b.date.localeCompare(a.date))
-    .slice(0,8);
-  return { ranked, notes };
-}
-
 /* ---------------- rendering shell ---------------- */
 function switchTab(tab){
   const fromIdx = TAB_ORDER.indexOf(state.tab);
@@ -1502,7 +1540,6 @@ function render(animDir){
     switch(state.tab){
       case 'dashboard': c.innerHTML = renderDashboard(); break;
       case 'workout': c.innerHTML = renderWorkout(); break;
-      case 'tennis': c.innerHTML = renderTennis(); break;
       case 'progress': c.innerHTML = renderProgress(); break;
       case 'calendar': c.innerHTML = renderCalendar(); break;
       case 'checklist': c.innerHTML = renderChecklist(); break;
@@ -1783,27 +1820,30 @@ function repeatLastWorkout(){
 }
 function renderExerciseCard(ex){
   const isUni = isUnilateralById(ex.id);
+  const isBW = isBodyweightById(ex.id);
+  const isSmith = isSmithBarById(ex.id);
   const pb = personalBest(ex.id);
   const fw = fourWeeksAgoEntry(ex.id);
   const target = nextTarget(ex.id);
-  const sugg = target.readyToBump ? suggestedWeight(ex.id) : null;
+  const sugg = (!isBW && target.readyToBump) ? suggestedWeight(ex.id) : null;
   const header = `
     <div class="ex-head">
       <div>
-        <div class="ex-name" onclick="openExerciseInfo('${ex.id}')">${ex.name}${isUni?' <span class="tag">L/R</span>':''} <span class="ex-name-info">how-to</span></div>
+        <div class="ex-name" onclick="openExerciseInfo('${ex.id}')">${ex.name}${isUni?' <span class="tag">L/R</span>':''}${isBW?' <span class="tag">Bodyweight</span>':''} <span class="ex-name-info">how-to</span></div>
         <div class="ex-prev" style="font-weight:600; color:var(--text);">${escapeHtml(target.text)}</div>
-        ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${fw.maxWeight} lb × ${fw.reps}</div>` : ''}
+        ${fw ? `<div class="ex-prev" style="opacity:.7;">4 wks ago: ${isBW ? fw.reps+' reps' : fw.maxWeight+' lb × '+fw.reps}</div>` : ''}
         ${sugg ? `<div style="margin-top:6px;"><span class="tag" style="cursor:pointer; border-color:var(--accent); color:var(--accent);" onclick="applySuggestedWeight('${ex.id}', ${sugg})">Apply ${sugg} lb</span></div>` : ''}
       </div>
-      ${pb ? `<span class="tag">PB ${pb.maxWeight} lb</span>` : ''}
+      ${pb ? `<span class="tag">PB ${statLabel(pb, ex.id)}</span>` : ''}
     </div>
+    ${isSmith ? renderPlateCalc(ex.id) : ''}
   `;
   if(isUni){
     return `
       <div class="ex-card">
         ${header}
-        ${renderSideSets(ex.id, 'left', 'Left')}
-        ${renderSideSets(ex.id, 'right', 'Right')}
+        ${renderSideSets(ex.id, 'left', 'Left', isBW)}
+        ${renderSideSets(ex.id, 'right', 'Right', isBW)}
       </div>
     `;
   }
@@ -1811,16 +1851,18 @@ function renderExerciseCard(ex){
   return `
     <div class="ex-card">
       ${header}
-      <div class="set-row" style="margin-bottom:2px;">
+      <div class="set-row${isBW?' set-row-bw':''}" style="margin-bottom:2px;">
         <div></div>
-        <div class="set-input-label">Weight (lb)</div>
+        ${isBW ? '' : '<div class="set-input-label">Weight (lb)</div>'}
         <div class="set-input-label">Reps</div>
+        <div></div>
       </div>
       ${sets.map((s,i)=>`
-        <div class="set-row">
+        <div class="set-row${isBW?' set-row-bw':''}">
           <div class="set-idx">${i+1}</div>
-          <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSet('${ex.id}',${i},'weight',this.value)">
+          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSet('${ex.id}',${i},'weight',this.value)">`}
           <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${s.reps}" oninput="updateSet('${ex.id}',${i},'reps',this.value)">
+          <button class="icon-btn set-del-btn" onclick="removeSet('${ex.id}',${i})" aria-label="Delete set">✕</button>
         </div>
       `).join('')}
       <div style="text-align:right; margin-top:4px;">
@@ -1829,21 +1871,32 @@ function renderExerciseCard(ex){
     </div>
   `;
 }
-function renderSideSets(exId, side, label){
+function renderPlateCalc(exId){
+  return `
+    <div class="plate-calc">
+      <span class="plate-calc-label">Plates /side:</span>
+      <input class="set-input plate-calc-input" type="number" inputmode="decimal" min="0" step="2.5" placeholder="Total lb" oninput="document.getElementById('plateOut-${exId}').textContent = plateBreakdownText(this.value)">
+      <span id="plateOut-${exId}" class="mono plate-calc-out">${plateBreakdownText(0)}</span>
+    </div>
+  `;
+}
+function renderSideSets(exId, side, label, isBW){
   const sets = state.draftSets[exId][side];
   return `
     <div>
       <div class="side-label">${label}</div>
-      <div class="set-row" style="margin-bottom:2px;">
+      <div class="set-row${isBW?' set-row-bw':''}" style="margin-bottom:2px;">
         <div></div>
-        <div class="set-input-label">Weight (lb)</div>
+        ${isBW ? '' : '<div class="set-input-label">Weight (lb)</div>'}
         <div class="set-input-label">Reps</div>
+        <div></div>
       </div>
       ${sets.map((s,i)=>`
-        <div class="set-row">
+        <div class="set-row${isBW?' set-row-bw':''}">
           <div class="set-idx">${i+1}</div>
-          <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSideSet('${exId}','${side}',${i},'weight',this.value)">
+          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSideSet('${exId}','${side}',${i},'weight',this.value)">`}
           <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${s.reps}" oninput="updateSideSet('${exId}','${side}',${i},'reps',this.value)">
+          <button class="icon-btn set-del-btn" onclick="removeSideSet('${exId}','${side}',${i})" aria-label="Delete set">✕</button>
         </div>
       `).join('')}
       <div style="text-align:right; margin-top:4px;">
@@ -1864,6 +1917,14 @@ function addSet(exId){
 }
 function addSideSet(exId, side){
   state.draftSets[exId][side].push({weight:'',reps:''});
+  render();
+}
+function removeSet(exId, idx){
+  state.draftSets[exId].splice(idx,1);
+  render();
+}
+function removeSideSet(exId, side, idx){
+  state.draftSets[exId][side].splice(idx,1);
   render();
 }
 function applySuggestedWeight(exId, weight){
@@ -2505,208 +2566,6 @@ function renderChecklist(){
   `;
 }
 
-/* ---------------- Tennis tab ---------------- */
-function renderTennis(){
-  const sessions = [...(state.data.tennisSessions||[])].sort((a,b)=>b.date.localeCompare(a.date));
-  const weekSessions = tennisSessionsThisWeek();
-  const weekMinutes = weekSessions.reduce((s,x)=>s+(Number(x.duration)||0),0);
-  const status = acwrStatus();
-  const series = loadSeries(7);
-  const d = state.tennisDraft;
-  const isMatch = d.type==='match';
-  return `
-    <div class="card">
-      <div class="card-title">Log A Session</div>
-      <div class="pill-row" style="margin-bottom:10px;">
-        ${Object.entries(TENNIS_TYPES).map(([k,t])=>`<div class="pill ${d.type===k?'active':''}" onclick="setTennisDraft('type','${k}')">${t.icon} ${t.label}</div>`).join('')}
-      </div>
-      <label class="field-label" style="margin-top:0;">Duration (minutes)</label>
-      <input class="text-input" type="number" inputmode="numeric" min="0" step="5" value="${d.duration}" oninput="state.tennisDraft.duration=this.value">
-      <label class="field-label">Effort</label>
-      <div class="pill-row" style="margin-bottom:0;">
-        ${TENNIS_INTENSITIES.map(i=>`<div class="pill ${d.intensity===i.v?'active':''}" onclick="setTennisDraft('intensity',${i.v})">${i.label}</div>`).join('')}
-      </div>
-      ${isMatch ? `
-      <label class="field-label">Opponent (optional)</label>
-      <input class="text-input" type="text" placeholder="Who'd you play?" value="${escapeHtml(d.opponent)}" oninput="state.tennisDraft.opponent=this.value">
-      <label class="field-label">Score</label>
-      <input class="text-input" type="text" placeholder="e.g. 6-4, 3-6, 6-2" value="${escapeHtml(d.score)}" oninput="state.tennisDraft.score=this.value">
-      <label class="field-label">Result</label>
-      <div class="pill-row" style="margin-bottom:0;">
-        <div class="pill ${d.result==='win'?'active':''}" onclick="setMatchResult('win')">🟢 Win</div>
-        <div class="pill ${d.result==='loss'?'active':''}" onclick="setMatchResult('loss')">🔴 Loss</div>
-      </div>
-      ` : ''}
-      <label class="field-label">Notes (optional)</label>
-      <textarea class="notes" style="min-height:50px;" placeholder="How the body felt, conditions, anything else..." oninput="state.tennisDraft.notes=this.value">${escapeHtml(d.notes)}</textarea>
-      <label class="field-label">What Could Improve? (optional)</label>
-      <div class="list-row-sub" style="margin-bottom:6px;">Tag what to work on — it rolls up into Focus Areas below so you can spot patterns.</div>
-      <div class="pill-row" style="margin-bottom:8px; flex-wrap:wrap;">
-        ${FOCUS_TAGS.map(tag=>`<div class="pill ${(d.improveTags||[]).includes(tag)?'active':''}" onclick="toggleImproveTag('${tag}')">${escapeHtml(tag)}</div>`).join('')}
-      </div>
-      <input class="text-input" type="text" placeholder="Anything specific? e.g. 'Toss drifting on serve'" value="${escapeHtml(d.improveNote)}" oninput="state.tennisDraft.improveNote=this.value">
-      <button class="btn btn-primary btn-block" style="margin-top:12px; padding:14px;" onclick="logTennisSession()">Log Session</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">This Week's Training Load</div>
-      <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;">
-        <div style="width:10px;height:10px;border-radius:50%; background:${status.color}; flex-shrink:0;"></div>
-        <div style="font-size:15px; font-weight:700;">${status.label}</div>
-      </div>
-      <div class="list-row-sub" style="margin-bottom:12px; line-height:1.5;">${status.blurb}</div>
-      ${renderLoadBarChart(series)}
-      <div class="list-row-sub" style="margin-top:6px; text-align:center;"><span style="color:var(--court);">●</span> Gym &nbsp; <span style="color:var(--accent);">●</span> Tennis</div>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-box"><div class="stat-num">${weekSessions.length}</div><div class="stat-label">Sessions This Week</div></div>
-      <div class="stat-box"><div class="stat-num">${weekMinutes}</div><div class="stat-label">Minutes On Court</div></div>
-    </div>
-
-    ${renderFocusAreasCard()}
-
-    <div class="card">
-      <div class="card-title">Recent Sessions</div>
-      ${sessions.length ? sessions.slice(0,10).map(s=>{
-        const t = TENNIS_TYPES[s.type] || {icon:'🎾', label:'Session'};
-        const eff = (TENNIS_INTENSITIES.find(i=>i.v===s.intensity)||{}).label || '';
-        const resultBadge = s.type==='match' && s.result ? `<span class="tag" style="${s.result==='win'?'background:rgba(48,209,88,0.18); color:#30d158;':'background:rgba(255,69,58,0.15); color:var(--danger);'} border:none; margin-left:6px;">${s.result==='win'?'W':'L'}</span>` : '';
-        return `
-        <div class="list-row" style="align-items:flex-start;">
-          <div>
-            <div class="list-row-title">${t.icon} ${t.label}${s.opponent?` vs. ${escapeHtml(s.opponent)}`:''}${resultBadge}</div>
-            <div class="list-row-sub">${prettyDate(s.date)} · ${s.duration} min${eff?' · '+eff:''}${s.score?' · '+escapeHtml(s.score):''}</div>
-            ${s.notes?`<div class="list-row-sub" style="margin-top:2px;">${escapeHtml(s.notes)}</div>`:''}
-            ${(s.improveTags&&s.improveTags.length) ? `<div style="margin-top:5px; display:flex; gap:4px; flex-wrap:wrap;">${s.improveTags.map(tag=>`<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-            ${s.improveNote?`<div class="list-row-sub" style="margin-top:4px; font-style:italic;">"${escapeHtml(s.improveNote)}"</div>`:''}
-          </div>
-          <button class="icon-btn" style="width:36px;height:36px; color:var(--danger); flex-shrink:0;" onclick="deleteTennisSession('${s.id}')" aria-label="Delete session">✕</button>
-        </div>
-      `;
-      }).join('') : `<div class="empty-state">No sessions yet — log a match or practice above to start tracking your weekly load.</div>`}
-    </div>
-    <div style="height:10px;"></div>
-  `;
-}
-function renderFocusAreasCard(){
-  const { ranked, notes } = focusAreaStats(30);
-  if(!ranked.length && !notes.length) return '';
-  return `
-    <div class="card">
-      <div class="card-title">Focus Areas — Last 30 Days</div>
-      ${ranked.length ? `
-        <div class="pill-row" style="margin-bottom:12px; flex-wrap:wrap;">
-          ${ranked.map(([tag,n])=>`<div class="pill" style="cursor:default;">${escapeHtml(tag)} <span class="mono" style="opacity:.7;">×${n}</span></div>`).join('')}
-        </div>
-      ` : ''}
-      ${notes.length ? `
-        <label class="field-label" style="margin-top:0;">Recent Notes</label>
-        ${notes.map(s=>`
-          <div class="list-row" style="display:block;">
-            <div class="list-row-sub">${prettyDate(s.date)}${(s.improveTags&&s.improveTags.length)?' · '+s.improveTags.map(escapeHtml).join(', '):''}</div>
-            ${s.improveNote ? `<div style="font-size:13.5px; margin-top:2px;">${escapeHtml(s.improveNote)}</div>` : ''}
-          </div>
-        `).join('')}
-      ` : ''}
-    </div>
-  `;
-}
-function renderLoadBarChart(series){
-  const w=300, h=130, padL=8, padR=8, padT=10, padB=18;
-  const max = Math.max(1, ...series.map(d=>d.gym+d.tennis));
-  const gap = (w-padL-padR)/series.length;
-  const barW = gap*0.55;
-  const bars = series.map((d,i)=>{
-    const usable = h-padT-padB;
-    const gymH = (d.gym/max)*usable;
-    const tennisH = (d.tennis/max)*usable;
-    const x = padL + i*gap + (gap-barW)/2;
-    const yBase = h-padB;
-    const dow = new Date(d.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'})[0];
-    return `
-      <rect x="${x.toFixed(1)}" y="${(yBase-gymH).toFixed(1)}" width="${barW.toFixed(1)}" height="${gymH.toFixed(1)}" fill="var(--court)" rx="2"/>
-      <rect x="${x.toFixed(1)}" y="${(yBase-gymH-tennisH).toFixed(1)}" width="${barW.toFixed(1)}" height="${tennisH.toFixed(1)}" fill="var(--accent)" rx="2"/>
-      <text x="${(x+barW/2).toFixed(1)}" y="${h-3}" text-anchor="middle" font-size="8" fill="var(--text-dim)" font-family="IBM Plex Mono">${dow}</text>
-    `;
-  }).join('');
-  return `<svg width="100%" height="140" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
-}
-
-/* ---------------- Progress Overview Charts ---------------- */
-function weeklySeries(weeks, valueFn){
-  const out = [];
-  for(let i=weeks-1; i>=0; i--){
-    const end = new Date(Date.now()-i*7*86400000);
-    const start = new Date(end.getTime()-6*86400000);
-    const startStr = dateToStr(start), endStr = dateToStr(end);
-    out.push({ label:endStr, value: valueFn(startStr, endStr) });
-  }
-  return out;
-}
-function weeklyVolumeSeries(weeks){
-  return weeklySeries(weeks, (startStr,endStr)=>{
-    let vol = 0;
-    for(const w of state.data.workouts){
-      if(w.date<startStr || w.date>endStr) continue;
-      for(const exId in w.exercises){
-        const ex = w.exercises[exId];
-        const allSets = ex.unilateral ? [...(ex.leftSets||[]), ...(ex.rightSets||[])] : (ex.sets||[]);
-        for(const s of allSets){ vol += (Number(s.weight)||0)*(Number(s.reps)||0); }
-      }
-    }
-    return vol;
-  });
-}
-function weeklyFrequencySeries(weeks){
-  return weeklySeries(weeks, (startStr,endStr)=>{
-    return new Set(state.data.workouts.filter(w=>w.date>=startStr && w.date<=endStr).map(w=>w.date)).size;
-  });
-}
-function renderBarChart(data, colorVar){
-  colorVar = colorVar || 'var(--accent)';
-  const w=300, h=130, padL=8, padR=8, padT=10, padB=18;
-  const max = Math.max(1, ...data.map(d=>d.value));
-  const gap = (w-padL-padR)/data.length;
-  const barW = gap*0.55;
-  const usable = h-padT-padB;
-  const labelEvery = Math.max(1, Math.ceil(data.length/8));
-  const bars = data.map((d,i)=>{
-    const bh = (d.value/max)*usable;
-    const x = padL + i*gap + (gap-barW)/2;
-    const y = h-padB-bh;
-    const showLabel = (i % labelEvery === 0) || i===data.length-1;
-    const lbl = showLabel ? new Date(d.label+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '';
-    return `
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${colorVar}" rx="2"><title>Week of ${prettyDate(d.label)}: ${d.value.toLocaleString()}</title></rect>
-      ${lbl ? `<text x="${(x+barW/2).toFixed(1)}" y="${h-3}" text-anchor="middle" font-size="7" fill="var(--text-dim)" font-family="IBM Plex Mono">${lbl}</text>` : ''}
-    `;
-  }).join('');
-  return `<svg width="100%" height="140" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
-}
-function buildAggregateExerciseSnapshot(days){
-  const cutoff = days ? dateToStr(new Date(Date.now()-(days-1)*86400000)) : null;
-  const snap = {};
-  for(const w of state.data.workouts){
-    if(cutoff && w.date<cutoff) continue;
-    for(const exId in w.exercises){
-      const ex = w.exercises[exId];
-      if(!snap[exId]) snap[exId] = ex.unilateral ? {unilateral:true, leftSets:[], rightSets:[]} : {sets:[]};
-      if(ex.unilateral){
-        snap[exId].leftSets.push(...(ex.leftSets||[]));
-        snap[exId].rightSets.push(...(ex.rightSets||[]));
-      } else {
-        snap[exId].sets.push(...(ex.sets||[]));
-      }
-    }
-  }
-  return snap;
-}
-function setProgressMuscleRange(d){
-  state.progressMuscleRange = d;
-  render();
-}
-
 /* ---------------- More: bodyweight, weekly plan, settings ---------------- */
 function renderMore(){
   const bw = [...state.data.bodyweight].sort((a,b)=>b.date.localeCompare(a.date));
@@ -2923,7 +2782,7 @@ function renderEditorDay(day){
         <label class="uni-check-label"><input type="checkbox" id="newExUni-${day}">L/R</label>
         <button class="btn btn-secondary btn-sm" onclick="addExerciseToDay(${day})">+ Add</button>
       </div>
-      <div class="list-row-sub" style="margin-top:12px;">Dumbbell + bench exercise bank</div>
+      <div class="list-row-sub" style="margin-top:12px;">Exercise bank — dumbbell, Smith machine, cable, landmine &amp; pull-up</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <select class="text-input bank-select" id="bankEx-${day}">
           <option value="">Choose a movement to add…</option>
@@ -3033,7 +2892,7 @@ function moveDay(day, dir){
   render();
 }
 
-/* ---- tennis program templates ---- */
+/* ---- weekly plan card ---- */
 function renderSimplePlanCard(){
   return `
     <div class="card">

@@ -390,8 +390,16 @@ label.field-label{font-size:12px; color:var(--text-dim); text-transform:none; le
 
 const STORAGE_KEY = 'stayhard-tennis-tracker-data-v2';
 const TAB_ORDER = ['dashboard','workout','progress','calendar','checklist','more'];
-const APP_VERSION = '2.12.2';
+const APP_VERSION = '2.12.4';
 const RELEASE_NOTES = [
+  { version:'2.12.4', date:'2026-08-10', notes:[
+    'Fixed pull-ups and dips never registering PRs — rep improvements weren\u2019t being detected as records.',
+    'Fixed Personal Bests, exercise history, search results, and PR share cards showing "0 lb" for bodyweight exercises instead of reps.',
+    'Quick Log on the Progress tab now hides the weight field for bodyweight exercises too.',
+  ]},
+  { version:'2.12.3', date:'2026-08-09', notes:[
+    'Weight and reps fields now show your exact numbers from last time as placeholder text (matched set-for-set), instead of a plain dash — so you always know what you\u2019re trying to match or beat.',
+  ]},
   { version:'2.12.2', date:'2026-08-09', notes:[
     'Fixed a bug that broke the Progress tab — the weekly volume, frequency, and muscle heat map charts had gotten caught up in the Tennis tab removal and were missing their supporting code.',
   ]},
@@ -1274,6 +1282,11 @@ function previousWeightFor(exId){
   if(!h.length) return null;
   return h[h.length-1];
 }
+function previousSetsFor(exId){
+  const sorted = state.data.workouts.filter(w=>w.exercises && w.exercises[exId]).sort((a,b)=> b.date.localeCompare(a.date));
+  if(!sorted.length) return null;
+  return sorted[0].exercises[exId];
+}
 function fourWeeksAgoEntry(exId){
   const target = new Date(Date.now() - 28*86400000);
   const h = exerciseHistory(exId);
@@ -1875,6 +1888,8 @@ function renderExerciseCard(ex){
     `;
   }
   const sets = state.draftSets[ex.id];
+  const prevEx = previousSetsFor(ex.id);
+  const prevSets = prevEx ? (prevEx.sets || []) : [];
   return `
     <div class="ex-card">
       ${header}
@@ -1884,14 +1899,19 @@ function renderExerciseCard(ex){
         <div class="set-input-label">Reps</div>
         <div></div>
       </div>
-      ${sets.map((s,i)=>`
+      ${sets.map((s,i)=>{
+        const prev = prevSets[i];
+        const wPh = prev && Number(prev.weight)>0 ? String(prev.weight) : '—';
+        const rPh = prev && Number(prev.reps)>0 ? String(prev.reps) : '—';
+        return `
         <div class="set-row${isBW?' set-row-bw':''}">
           <div class="set-idx">${i+1}</div>
-          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSet('${ex.id}',${i},'weight',this.value)">`}
-          <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${s.reps}" oninput="updateSet('${ex.id}',${i},'reps',this.value)">
+          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="${wPh}" value="${s.weight}" oninput="updateSet('${ex.id}',${i},'weight',this.value)">`}
+          <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="${rPh}" value="${s.reps}" oninput="updateSet('${ex.id}',${i},'reps',this.value)">
           <button class="icon-btn set-del-btn" onclick="removeSet('${ex.id}',${i})" aria-label="Delete set">✕</button>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
       <div style="text-align:right; margin-top:4px;">
         <span class="btn btn-secondary btn-sm" onclick="addSet('${ex.id}')">+ Add Set</span>
       </div>
@@ -1922,6 +1942,8 @@ function renderPlateCalc(exId){
 }
 function renderSideSets(exId, side, label, isBW){
   const sets = state.draftSets[exId][side];
+  const prevEx = previousSetsFor(exId);
+  const prevSets = prevEx ? (prevEx[side+'Sets'] || []) : [];
   return `
     <div>
       <div class="side-label">${label}</div>
@@ -1931,14 +1953,19 @@ function renderSideSets(exId, side, label, isBW){
         <div class="set-input-label">Reps</div>
         <div></div>
       </div>
-      ${sets.map((s,i)=>`
+      ${sets.map((s,i)=>{
+        const prev = prevSets[i];
+        const wPh = prev && Number(prev.weight)>0 ? String(prev.weight) : '—';
+        const rPh = prev && Number(prev.reps)>0 ? String(prev.reps) : '—';
+        return `
         <div class="set-row${isBW?' set-row-bw':''}">
           <div class="set-idx">${i+1}</div>
-          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="—" value="${s.weight}" oninput="updateSideSet('${exId}','${side}',${i},'weight',this.value)">`}
-          <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${s.reps}" oninput="updateSideSet('${exId}','${side}',${i},'reps',this.value)">
+          ${isBW ? '' : `<input class="set-input" type="number" inputmode="decimal" min="0" step="0.5" placeholder="${wPh}" value="${s.weight}" oninput="updateSideSet('${exId}','${side}',${i},'weight',this.value)">`}
+          <input class="set-input" type="number" inputmode="numeric" min="0" step="1" placeholder="${rPh}" value="${s.reps}" oninput="updateSideSet('${exId}','${side}',${i},'reps',this.value)">
           <button class="icon-btn set-del-btn" onclick="removeSideSet('${exId}','${side}',${i})" aria-label="Delete set">✕</button>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
       <div style="text-align:right; margin-top:4px;">
         <span class="btn btn-secondary btn-sm" onclick="addSideSet('${exId}','${side}')">+ Add ${label} Set</span>
       </div>
@@ -2017,11 +2044,20 @@ function completeWorkout(){
     totalSets += allSets.length;
     for(const s of allSets){ totalVolume += s.weight*s.reps; }
     const priorBest = personalBest(exId);
-    const maxThis = allSets.length ? Math.max(...allSets.map(s=>s.weight)) : 0;
-    if(!priorBest || maxThis > priorBest.maxWeight){
-      prExIds.push(exId);
-      const setAtMax = allSets.find(s=>s.weight===maxThis) || allSets[0];
-      prDetails.push({ exId, weight:maxThis, reps: setAtMax ? setAtMax.reps : 0 });
+    const isBW = isBodyweightById(exId);
+    if(isBW){
+      const maxReps = allSets.length ? Math.max(...allSets.map(s=>s.reps)) : 0;
+      if(maxReps>0 && (!priorBest || maxReps > priorBest.reps)){
+        prExIds.push(exId);
+        prDetails.push({ exId, weight:0, reps:maxReps, isBW:true });
+      }
+    } else {
+      const maxThis = allSets.length ? Math.max(...allSets.map(s=>s.weight)) : 0;
+      if(maxThis>0 && (!priorBest || maxThis > priorBest.maxWeight)){
+        prExIds.push(exId);
+        const setAtMax = allSets.find(s=>s.weight===maxThis) || allSets[0];
+        prDetails.push({ exId, weight:maxThis, reps: setAtMax ? setAtMax.reps : 0, isBW:false });
+      }
     }
   }
   const workout = { id:uid(), date, day, exercises:exercisesOut, notes: state.draftNotes||'', prExIds };
@@ -2066,9 +2102,10 @@ function renderSummary(){
         <div class="card-title">🏆 PRs Hit Today</div>
         ${s.prDetails.map(p=>{
           const name = (state.data.exercises[p.exId]||{name:p.exId}).name;
+          const sub = p.isBW ? `${p.reps} reps` : `${p.weight} lb × ${p.reps}`;
           return `
             <div class="list-row">
-              <div><div class="list-row-title">${escapeHtml(name)}</div><div class="list-row-sub">${p.weight} lb × ${p.reps}</div></div>
+              <div><div class="list-row-title">${escapeHtml(name)}</div><div class="list-row-sub">${sub}</div></div>
               <button class="btn btn-secondary btn-sm" onclick="sharePrCard('${p.exId}', ${p.weight}, ${p.reps}, '${s.date}', ${s.day})">📤 Share</button>
             </div>
           `;
@@ -2321,7 +2358,7 @@ function renderProgress(){
         return `<div class="list-row">
           <div><div class="list-row-title">${e.name}</div><div class="list-row-sub">${e.day?`Day ${e.day}`:'Archived'} · ${prettyDate(pb.date)}</div></div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <div class="list-row-val">${pb.maxWeight} lb</div>
+            <div class="list-row-val">${statLabel(pb, e.id)}</div>
             <button class="icon-btn" style="width:32px; height:32px; font-size:13px;" onclick="sharePrCard('${e.id}', ${pb.maxWeight}, ${pb.reps}, '${pb.date}', ${e.day||1})" title="Share">📤</button>
           </div>
         </div>`;
@@ -2379,6 +2416,8 @@ function renderExerciseProgressRow(ex){
   const gain = strengthGainPct(ex.id);
   const isOpen = state.expandedIds.has(ex.id);
   const isUni = isUnilateralById(ex.id);
+  const isBW = isBodyweightById(ex.id);
+  const chartVals = h.map(r=> isBW ? r.reps : r.maxWeight);
   return `
     <div style="border-bottom:1px solid var(--line); padding:10px 0;">
       <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleExpand('${ex.id}')">
@@ -2390,15 +2429,15 @@ function renderExerciseProgressRow(ex){
           ${gain!==null ? `<div class="list-row-val ${gain>=0?'gain-pos':'gain-neg'}">${gain>=0?'+':''}${gain.toFixed(1)}%</div>` : `<div class="list-row-sub">—</div>`}
         </div>
       </div>
-      ${h.length>=2 ? (state.chartMode==='expanded' ? renderLineChart(h.map(r=>({date:r.date, value:r.maxWeight}))) : renderMiniSparkline(h.map(r=>r.maxWeight))) : ''}
+      ${h.length>=2 ? (state.chartMode==='expanded' ? renderLineChart(h.map((r,i)=>({date:r.date, value:chartVals[i]}))) : renderMiniSparkline(chartVals)) : ''}
       <div style="display:${isOpen?'block':'none'}; margin-top:8px;">
         ${!ex.archived && !isUni ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openQuickAdd('${ex.id}')">+ Quick Log</button>
         ${state.quickAddExId===ex.id ? renderQuickAddForm(ex.id) : ''}` : ''}
-        ${h.length>=2 ? `<div class="list-row-sub" style="margin:10px 0 2px;">Volume Trend</div>${renderMiniSparkline(h.map(r=>r.volume))}` : ''}
+        ${(!isBW && h.length>=2) ? `<div class="list-row-sub" style="margin:10px 0 2px;">Volume Trend</div>${renderMiniSparkline(h.map(r=>r.volume))}` : ''}
         ${h.slice().reverse().map(r=>`
           <div class="list-row" style="padding:6px 0;">
             <div class="list-row-sub">${prettyDate(r.date)}</div>
-            <div class="mono" style="font-size:13px; text-align:right;">${r.maxWeight} lb × ${r.reps}<br><span style="font-size:10px; color:var(--text-dim);">Vol ${r.volume.toLocaleString()}</span></div>
+            <div class="mono" style="font-size:13px; text-align:right;">${isBW ? r.reps+' reps' : r.maxWeight+' lb × '+r.reps}${isBW ? '' : `<br><span style="font-size:10px; color:var(--text-dim);">Vol ${r.volume.toLocaleString()}</span>`}</div>
           </div>
         `).join('')}
       </div>
@@ -2415,10 +2454,11 @@ function openQuickAdd(exId){
   render();
 }
 function renderQuickAddForm(exId){
+  const isBW = isBodyweightById(exId);
   return `
     <div class="card" style="padding:10px; margin:8px 0;">
       <div style="display:flex; gap:6px;">
-        <input class="set-input" type="number" placeholder="Weight" id="qaWeight-${exId}">
+        ${isBW ? '' : `<input class="set-input" type="number" placeholder="Weight" id="qaWeight-${exId}">`}
         <input class="set-input" type="number" placeholder="Reps" id="qaReps-${exId}">
         <button class="btn btn-primary btn-sm" onclick="submitQuickAdd('${exId}')">Save</button>
       </div>
@@ -2426,9 +2466,11 @@ function renderQuickAddForm(exId){
   `;
 }
 function submitQuickAdd(exId){
-  const weight = Number(document.getElementById('qaWeight-'+exId).value)||0;
+  const isBW = isBodyweightById(exId);
+  const weightEl = document.getElementById('qaWeight-'+exId);
+  const weight = isBW ? 0 : (Number(weightEl && weightEl.value)||0);
   const reps = Number(document.getElementById('qaReps-'+exId).value)||0;
-  if(weight<=0 && reps<=0){ showToast('Enter a weight and reps'); return; }
+  if(weight<=0 && reps<=0){ showToast(isBW ? 'Enter reps' : 'Enter a weight and reps'); return; }
   const exInfo = exerciseById(exId);
   if(!exInfo){ showToast('Cannot log to an archived exercise'); return; }
   snapshot();
@@ -2442,10 +2484,17 @@ function submitQuickAdd(exId){
   }
   if(!workout.exercises[exId]) workout.exercises[exId] = {sets:[]};
   workout.exercises[exId].sets.push({weight,reps});
-  const newMax = Math.max(...workout.exercises[exId].sets.map(s=>s.weight));
   let isPr = false;
-  if(!priorBest || newMax>priorBest.maxWeight){
-    if(!workout.prExIds.includes(exId)){ workout.prExIds.push(exId); isPr = true; }
+  if(isBW){
+    const newMaxReps = Math.max(...workout.exercises[exId].sets.map(s=>s.reps));
+    if(newMaxReps>0 && (!priorBest || newMaxReps>priorBest.reps)){
+      if(!workout.prExIds.includes(exId)){ workout.prExIds.push(exId); isPr = true; }
+    }
+  } else {
+    const newMax = Math.max(...workout.exercises[exId].sets.map(s=>s.weight));
+    if(newMax>0 && (!priorBest || newMax>priorBest.maxWeight)){
+      if(!workout.prExIds.includes(exId)){ workout.prExIds.push(exId); isPr = true; }
+    }
   }
   saveData();
   state.quickAddExId = null;
@@ -3128,7 +3177,7 @@ function drawDumbbellMarkCanvas(ctx, x, y, size, color){
   rr(19,4,4,16,1.4*s);
   rr(5,10.2,14,3.6,1.0*s);
 }
-async function generatePrCardBlob(exName, weight, reps, dateStr, day){
+async function generatePrCardBlob(exName, weight, reps, dateStr, day, isBW){
   await ensureFontsLoaded();
   const accent = (getComputedStyle(document.documentElement).getPropertyValue('--lime')||'#ff2d12').trim() || '#ff2d12';
   const W = 1080, H = 1080;
@@ -3162,11 +3211,17 @@ async function generatePrCardBlob(exName, weight, reps, dateStr, day){
   const weightY = 220 + nameLines*68 + 130;
   ctx.fillStyle = accent;
   ctx.font = '700 150px "IBM Plex Mono", monospace';
-  ctx.fillText(weight+' LB', 76, weightY);
-
-  ctx.fillStyle = '#9a9a9a';
-  ctx.font = '500 36px "IBM Plex Mono", monospace';
-  ctx.fillText('× '+reps+' reps', 80, weightY+56);
+  if(isBW){
+    ctx.fillText(reps+' REPS', 76, weightY);
+    ctx.fillStyle = '#9a9a9a';
+    ctx.font = '500 36px "IBM Plex Mono", monospace';
+    ctx.fillText('BODYWEIGHT', 80, weightY+56);
+  } else {
+    ctx.fillText(weight+' LB', 76, weightY);
+    ctx.fillStyle = '#9a9a9a';
+    ctx.font = '500 36px "IBM Plex Mono", monospace';
+    ctx.fillText('× '+reps+' reps', 80, weightY+56);
+  }
 
   ctx.fillStyle = '#8f8f8f';
   ctx.font = '600 28px "IBM Plex Sans", sans-serif';
@@ -3178,10 +3233,11 @@ async function generatePrCardBlob(exName, weight, reps, dateStr, day){
 }
 async function sharePrCard(exId, weight, reps, dateStr, day){
   const exName = (state.data.exercises[exId] || {name:exId}).name;
+  const isBW = isBodyweightById(exId);
   showToast('Generating PR card…');
   let blob;
   try{
-    blob = await generatePrCardBlob(exName, weight, reps, dateStr, day);
+    blob = await generatePrCardBlob(exName, weight, reps, dateStr, day, isBW);
   }catch(e){
     showToast('⚠️ Could not generate image');
     return;
@@ -3292,7 +3348,7 @@ function renderSearchRow(e){
   const pb = personalBest(e.id);
   return `<div class="list-row" style="cursor:pointer;" onclick="goToWorkoutDay(${e.day})">
     <div><div class="list-row-title">${e.name}</div><div class="list-row-sub">Day ${e.day} · ${state.data.program[e.day].name}</div></div>
-    <div class="list-row-val">${pb?pb.maxWeight+' lb':'—'}</div>
+    <div class="list-row-val">${statLabel(pb, e.id)}</div>
   </div>`;
 }
 function renderSearchResultsOnly(){
